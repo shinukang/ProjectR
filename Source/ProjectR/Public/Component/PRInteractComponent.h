@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "PRInventoryComponent.generated.h"
+#include "PRInteractComponent.generated.h"
 
 
 UCLASS(Blueprintable, BlueprintType)
-class PROJECTR_API UPRInventoryComponent : public UActorComponent
+class PROJECTR_API UPRInteractComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UPRInventoryComponent();
+	UPRInteractComponent();
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -28,9 +28,5 @@ private:
 	void InitComp();
 
 	// Character Camera Refs
-	TObjectPtr<APlayerCameraManager> OwnerCam = nullptr;
-
-	// Character Controller Refs
-	TObjectPtr<APlayerController> OwnerController = nullptr;
-		
+	TObjectPtr<APlayerCameraManager> OwnerCam = nullptr;		
 };
