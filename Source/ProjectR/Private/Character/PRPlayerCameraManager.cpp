@@ -2,7 +2,7 @@
 #include "Character/PRBaseCharacter.h"
 #include "Character/PRPlayerController.h"
 #include "Character/Animation/PRPlayerCameraBehavior.h"
-#include "Components/PRDebugComponent.h"
+#include "Component/PRDebugComponent.h"
 
 #include "Kismet/KismetMathLibrary.h"
 

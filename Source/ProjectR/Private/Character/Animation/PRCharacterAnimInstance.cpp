@@ -1,7 +1,7 @@
 #include "Character/Animation/PRCharacterAnimInstance.h"
 #include "Character/PRBaseCharacter.h"
 #include "Library/PRMathLibrary.h"
-#include "Components/PRDebugComponent.h"
+#include "Component/PRDebugComponent.h"
 
 #include "Curves/CurveVector.h"
 #include "Components/CapsuleComponent.h"

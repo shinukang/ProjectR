@@ -2,7 +2,7 @@
 
 
 #include "Library/PRCharacterStructLibrary.h"
-#include "Components/PRDebugComponent.h"
+#include "Component/PRDebugComponent.h"
 
 #include "Components/CapsuleComponent.h"
 

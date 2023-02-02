@@ -22,6 +22,9 @@ class PROJECTR_API IPRInteractInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	UFUNCTION()
-	bool
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interact")
+	bool CanInteract();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
+	FName GetID();
 };

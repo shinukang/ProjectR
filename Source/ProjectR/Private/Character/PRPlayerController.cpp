@@ -5,7 +5,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Character/PRCharacter.h"
 #include "Character/PRPlayerCameraManager.h"
-#include "Components/PRDebugComponent.h"
+#include "Component/PRDebugComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 void APRPlayerController::OnPossess(APawn* NewPawn)

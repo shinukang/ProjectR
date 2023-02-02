@@ -1,4 +1,4 @@
-﻿#include "Components/PRDebugComponent.h"
+﻿#include "Component/PRDebugComponent.h"
 #include "Character/PRBaseCharacter.h"
 #include "Character/PRPlayerCameraManager.h"
 #include "Character/Animation/PRPlayerCameraBehavior.h"

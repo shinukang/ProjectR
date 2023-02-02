@@ -2,7 +2,7 @@
 #include "Character/Animation/PRCharacterAnimInstance.h"
 #include "Character/Animation/PRPlayerCameraBehavior.h"
 #include "Library/PRMathLibrary.h"
-#include "Components/PRDebugComponent.h"
+#include "Component/PRDebugComponent.h"
 
 #include "Components/CapsuleComponent.h"
 #include "Curves/CurveFloat.h"
