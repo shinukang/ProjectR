@@ -48,7 +48,7 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 			{
 				if(IPRInteractInterface::Execute_CanInteract(HitActor))
 				{
-					FName HitActorID = IPRInteractInterface::Execute_GetID(HitActor);
+					const FName HitActorID = IPRInteractInterface::Execute_GetID(HitActor);
 
 					UE_LOG(LogTemp, Warning, TEXT("HitActorID = %s"), *HitActorID.ToString());
 				}
