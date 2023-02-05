@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Engine/DataTable.h"
+#include "Widget/PRWidgetBase.h"
+#include "Blueprint/UserWidget.h"
 #include "PRInteractComponent.generated.h"
 
 
@@ -23,10 +26,21 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	//
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void SetupWidget();
+
+	// HUD Ref
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widget")
+	TObjectPtr<UPRWidgetBase> HUD = nullptr;
+
 private:
-	// Initialize Component
-	void InitComp();
+	// Check the interactive actor
+	AActor* CheckInteractiveActor();
 
 	// Character Camera Refs
-	TObjectPtr<APlayerCameraManager> OwnerCam = nullptr;		
+	TObjectPtr<APlayerCameraManager> OwnerCam = nullptr;
+
+	// Detected Actor Refs
+	TObjectPtr<AActor> DetectedActor = nullptr;
 };

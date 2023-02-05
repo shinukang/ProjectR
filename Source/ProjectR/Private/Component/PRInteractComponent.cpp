@@ -3,10 +3,15 @@
 
 #include "Component/PRInteractComponent.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/CameraModifier_CameraShake.h"
 #include "GameFramework/Character.h"
 #include "Interface/PRInteractInterface.h"
+#include "Interface/PRWidgetInterface.h"
+#include "Kismet/DataTableFunctionLibrary.h"
+#include "Kismet/KismetStringLibrary.h"
+#include "Library/PRObjectStructLibrary.h"
 
 // Sets default values for this component's properties
 UPRInteractComponent::UPRInteractComponent()
@@ -24,7 +29,17 @@ void UPRInteractComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitComp();
+	const APlayerController* OwnerController = Cast<APlayerController>(GetOwner());
+
+	if (!OwnerController) // If OwnerController is null, Print Log
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[UPRInteractComponent::InitComp] : OwnerController is null"));
+	}
+
+	// Set OwnerCam
+	OwnerCam = OwnerController->PlayerCameraManager;
+
+	SetupWidget();
 }
 
 // Called every frame
@@ -32,8 +47,31 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if(AActor* NewDetectedActor = CheckInteractiveActor())
+	{
+		if(DetectedActor != NewDetectedActor)
+		{
+			// UI update
+			DetectedActor = NewDetectedActor;
+			const FString DetectedActorName = IPRInteractInterface::Execute_GetName(DetectedActor);
+			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, DetectedActorName);
+		}
+	}
+	else
+	{
+		// UI update (remove)
+		if(DetectedActor != nullptr)
+		{
+			DetectedActor = nullptr;
+			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, FString());
+		}
+	}
+}
+
+AActor* UPRInteractComponent::CheckInteractiveActor()
+{
 	if (OwnerCam)
-	{	
+	{
 		FVector CamLoc; // Player Camera Location
 		FRotator CamRot; // Player Camera Rotation
 		FHitResult HitResult;
@@ -41,33 +79,14 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		OwnerCam->GetCameraViewPoint(CamLoc, CamRot);
 
 		GetWorld()->LineTraceSingleByChannel(HitResult, CamLoc, CamLoc + 1000.0f * CamRot.Vector(), ECollisionChannel::ECC_Visibility);
-		
-		if(HitResult.bBlockingHit)
-		{
-			if(AActor* HitActor = HitResult.GetActor(); HitActor->Implements<UPRInteractInterface>())
-			{
-				if(IPRInteractInterface::Execute_CanInteract(HitActor))
-				{
-					const FName HitActorID = IPRInteractInterface::Execute_GetID(HitActor);
 
-					UE_LOG(LogTemp, Warning, TEXT("HitActorID = %s"), *HitActorID.ToString());
-				}
+		if (HitResult.bBlockingHit)
+		{
+			if (AActor* HitActor = HitResult.GetActor(); HitActor->Implements<UPRInteractInterface>() && IPRInteractInterface::Execute_CanInteract(HitActor))
+			{
+				return HitActor;
 			}
 		}
 	}
+	return nullptr;
 }
-
-void UPRInteractComponent::InitComp()
-{
-	const APlayerController* OwnerController = Cast<APlayerController>(GetOwner());
-
-	if (!OwnerController) // If OwnerController is null, Print Log
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UPRInteractComponent::BeginPlay] : OwnerController is null"));
-	}
-
-	// Set OwnerCam
-	OwnerCam = OwnerController->PlayerCameraManager;
-}
-
-
