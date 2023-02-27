@@ -1,4 +1,5 @@
 #pragma once
+#include "Components/Image.h"
 #include "Engine/DataTable.h"
 
 #include "PRObjectStructLibrary.generated.h"
@@ -8,18 +9,12 @@ struct FPRObject : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "SubDataTable")
-	TObjectPtr<UDataTable> SubDataTable = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DisplayName")
+	FText ObjectName;
 
-	UPROPERTY(EditAnywhere, Category = "Description")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Icon")
+	TObjectPtr<UImage> Icon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Description")
 	FString Description = FString(TEXT("Description for DataTable"));
-};
-
-USTRUCT(BlueprintType)
-struct FPRRifle : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, Category = "Name")
-	FName RifleName;
 };

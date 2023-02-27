@@ -59,7 +59,7 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		{
 			// UI update
 			DetectedActor = NewDetectedActor;
-			const FString DetectedActorName = IPRInteractInterface::Execute_GetName(DetectedActor);
+			const FName DetectedActorName = IPRInteractInterface::Execute_GetObjectID(DetectedActor);
 			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, DetectedActorName);
 		}
 	}
@@ -69,7 +69,7 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		if(DetectedActor != nullptr)
 		{
 			DetectedActor = nullptr;
-			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, FString());
+			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, FName());
 		}
 	}
 }

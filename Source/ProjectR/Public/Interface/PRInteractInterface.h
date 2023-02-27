@@ -26,6 +26,6 @@ public:
 	bool CanInteract();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
-	FString GetName();
+	FName GetObjectID();
 
 };

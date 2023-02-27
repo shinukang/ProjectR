@@ -23,6 +23,6 @@ class PROJECTR_API IPRWidgetInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interact")
-	void UpdateInteractInfo(const FString& Name);
+	void UpdateInteractInfo(const FName& ObjectID);
 
 };

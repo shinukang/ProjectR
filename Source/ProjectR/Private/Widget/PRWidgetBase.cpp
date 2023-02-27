@@ -3,7 +3,7 @@
 
 #include "Widget/PRWidgetBase.h"
 
-void UPRWidgetBase::UpdateInteractInfo_Implementation(const FString& Name)
+void UPRWidgetBase::UpdateInteractInfo_Implementation(const FName& ObjectID)
 {
 	
 }

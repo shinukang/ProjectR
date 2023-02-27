@@ -16,5 +16,5 @@ class PROJECTR_API UPRWidgetBase : public UUserWidget, public IPRWidgetInterface
 	GENERATED_BODY()
 
 public:
-	void UpdateInteractInfo_Implementation(const FString& Name) override;
+	void UpdateInteractInfo_Implementation(const FName& ObjectID) override;
 };

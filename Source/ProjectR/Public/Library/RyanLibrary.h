@@ -17,4 +17,5 @@ class PROJECTR_API URyanLibrary : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION()
 	static void SetupInputs(UObject* Object, APlayerController* PlayerController, UInputMappingContext* InputMappingContext, bool bNeedToClearMappings=false);
+
 };
