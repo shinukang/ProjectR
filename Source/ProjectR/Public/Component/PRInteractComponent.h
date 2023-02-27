@@ -7,6 +7,7 @@
 #include "Engine/DataTable.h"
 #include "Widget/PRWidgetBase.h"
 #include "Blueprint/UserWidget.h"
+#include "InputMappingContext.h"
 #include "PRInteractComponent.generated.h"
 
 
@@ -34,7 +35,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widget")
 	TObjectPtr<UPRWidgetBase> HUD = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputMappingContext> InteractInputMappingContext = nullptr;
+
 private:
+
+	// On Interact Action 
+	UFUNCTION()
+	void IA_Interact(const FInputActionValue& Value);
+
 	// Check the interactive actor
 	AActor* CheckInteractiveActor();
 

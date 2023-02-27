@@ -12,6 +12,10 @@
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "Library/PRObjectStructLibrary.h"
+#include <EnhancedInputComponent.h>
+#include "EnhancedInput/Public/InputMappingContext.h"
+#include "EnhancedInput/Public/EnhancedInputSubsystems.h"
+#include "Library/RyanLibrary.h"
 
 // Sets default values for this component's properties
 UPRInteractComponent::UPRInteractComponent()
@@ -29,7 +33,7 @@ void UPRInteractComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	const APlayerController* OwnerController = Cast<APlayerController>(GetOwner());
+	APlayerController* OwnerController = Cast<APlayerController>(GetOwner());
 
 	if (!OwnerController) // If OwnerController is null, Print Log
 	{
@@ -40,6 +44,8 @@ void UPRInteractComponent::BeginPlay()
 	OwnerCam = OwnerController->PlayerCameraManager;
 
 	SetupWidget();
+
+	URyanLibrary::SetupInputs(this, OwnerController, InteractInputMappingContext);
 }
 
 // Called every frame
@@ -90,3 +96,9 @@ AActor* UPRInteractComponent::CheckInteractiveActor()
 	}
 	return nullptr;
 }
+
+void UPRInteractComponent::IA_Interact(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("IA_Interact"));
+}
+

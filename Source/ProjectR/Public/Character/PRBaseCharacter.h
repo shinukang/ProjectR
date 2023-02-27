@@ -302,46 +302,46 @@ public:
 	/** Input */
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void ForwardMovementAction(float Value);
+	void IA_ForwardMovement(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void RightMovementAction(float Value);
+	void IA_RightMovement(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void CameraUpAction(float Value);
+	void IA_CameraUp(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void CameraRightAction(float Value);
+	void IA_CameraRight(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void JumpAction(bool bValue);
+	void IA_Jump(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void SprintAction(bool bValue);
+	void IA_Sprint(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void AimAction(bool bValue);
+	void IA_Aim(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void CameraTapAction();
+	void IA_CameraTap(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void CameraHeldAction();
+	void IA_CameraHeld(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void StanceAction();
+	void IA_Stance(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void WalkAction();
+	void IA_Walk(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void RagdollAction();
+	void IA_Ragdoll(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void VelocityDirectionAction();
+	void IA_VelocityDirection(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void LookingDirectionAction();
+	void IA_LookingDirection(const FInputActionValue& Value);
 
 protected:
 	/** Ragdoll System */

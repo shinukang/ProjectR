@@ -4,6 +4,8 @@
 #include "Character/Animation/PRPlayerCameraBehavior.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "InputActionValue.h"
+#include "Library/RyanLibrary.h"
 
 bool UPRDebugComponent::bDebugView = false;
 bool UPRDebugComponent::bShowTraces = false;
@@ -73,39 +75,6 @@ void UPRDebugComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 	bShowLayerColors = false;
 }
 
-void UPRDebugComponent::FocusedDebugCharacterCycle(bool bValue)
-{
-	// Refresh list, so we can also debug runtime spawned characters & remove despawned characters back
-	DetectDebuggableCharactersInWorld();
-
-	if (FocusedDebugCharacterIndex == INDEX_NONE)
-	{
-		// Return here as no APRBaseCharacter where found during call of BeginPlay.
-		// Moreover, for safety set also no focused debug character.
-		DebugFocusCharacter = nullptr;
-		return;
-	}
-
-	if (bValue)
-	{
-		FocusedDebugCharacterIndex++;
-		if (FocusedDebugCharacterIndex >= AvailableDebugCharacters.Num())
-		{
-			FocusedDebugCharacterIndex = 0;
-		}
-	}
-	else
-	{
-		FocusedDebugCharacterIndex--;
-		if (FocusedDebugCharacterIndex < 0)
-		{
-			FocusedDebugCharacterIndex = AvailableDebugCharacters.Num() - 1;
-		}
-	}
-
-	DebugFocusCharacter = AvailableDebugCharacters[FocusedDebugCharacterIndex];
-}
-
 void UPRDebugComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -117,6 +86,7 @@ void UPRDebugComponent::BeginPlay()
 		SetDynamicMaterials();
 		SetResetColors();
 	}
+	URyanLibrary::SetupInputs(this, Cast<APlayerController>(OwnerCharacter->GetController()), DebugInputMappingContext);
 }
 
 void UPRDebugComponent::DetectDebuggableCharactersInWorld()
@@ -154,29 +124,6 @@ void UPRDebugComponent::ToggleGlobalTimeDilationLocal(float TimeDilation)
 	}
 }
 
-void UPRDebugComponent::ToggleSlomo()
-{
-	bSlomo = !bSlomo;
-	ToggleGlobalTimeDilationLocal(bSlomo ? 0.15f : 1.f);
-}
-
-void UPRDebugComponent::ToggleDebugView()
-{
-	bDebugView = !bDebugView;
-
-	APRPlayerCameraManager* CamManager = Cast<APRPlayerCameraManager>(
-		UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0));
-	if (CamManager)
-	{
-		UPRPlayerCameraBehavior* CameraBehavior = Cast<UPRPlayerCameraBehavior>(
-			CamManager->CameraBehavior->GetAnimInstance());
-		if (CameraBehavior)
-		{
-			CameraBehavior->bDebugView = bDebugView;
-		}
-	}
-}
-
 void UPRDebugComponent::OpenOverlayMenu_Implementation(bool bValue)
 {
 }
@@ -184,22 +131,6 @@ void UPRDebugComponent::OpenOverlayMenu_Implementation(bool bValue)
 void UPRDebugComponent::OverlayMenuCycle_Implementation(bool bValue)
 {
 }
-
-void UPRDebugComponent::ToggleDebugMesh()
-{
-	if (bDebugMeshVisible)
-	{
-		OwnerCharacter->SetVisibleMesh(DefaultSkeletalMesh);
-	}
-	else
-	{
-		//DefaultSkeletalMesh = OwnerCharacter->GetMesh()->GetSkeletalMeshAsset();
-		DefaultSkeletalMesh = OwnerCharacter->GetMesh()->SkeletalMesh;
-		OwnerCharacter->SetVisibleMesh(DebugSkeletalMesh);
-	}
-	bDebugMeshVisible = !bDebugMeshVisible;
-}
-
 
 /** Util for drawing result of single line trace  */
 void UPRDebugComponent::DrawDebugLineTraceSingle(const UWorld* World,
@@ -318,4 +249,85 @@ void UPRDebugComponent::DrawDebugSphereTraceSingle(const UWorld* World,
 			DrawDebugSweptSphere(World, Start, End, CollisionShape.GetSphereRadius(), TraceColor.ToFColor(true), bPersistent, LifeTime);
 		}
 	}
+}
+
+void UPRDebugComponent::IA_ToggleDebugView(const FInputActionValue& Value)
+{
+	bDebugView = !bDebugView;
+
+	APRPlayerCameraManager* CamManager = Cast<APRPlayerCameraManager>(
+		UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0));
+	if (CamManager)
+	{
+		UPRPlayerCameraBehavior* CameraBehavior = Cast<UPRPlayerCameraBehavior>(
+			CamManager->CameraBehavior->GetAnimInstance());
+		if (CameraBehavior)
+		{
+			CameraBehavior->bDebugView = bDebugView;
+		}
+	}
+}
+
+void UPRDebugComponent::IA_FocusedCharacterCycleAction(const FInputActionValue& Value)
+{
+	// Refresh list, so we can also debug runtime spawned characters & remove despawned characters back
+	DetectDebuggableCharactersInWorld();
+
+	if (FocusedDebugCharacterIndex == INDEX_NONE)
+	{
+		// Return here as no APRBaseCharacter where found during call of BeginPlay.
+		// Moreover, for safety set also no focused debug character.
+		DebugFocusCharacter = nullptr;
+		return;
+	}
+
+	if (Value.GetMagnitude() > 0)
+	{
+		FocusedDebugCharacterIndex++;
+		if (FocusedDebugCharacterIndex >= AvailableDebugCharacters.Num())
+		{
+			FocusedDebugCharacterIndex = 0;
+		}
+	}
+	else
+	{
+		FocusedDebugCharacterIndex--;
+		if (FocusedDebugCharacterIndex < 0)
+		{
+			FocusedDebugCharacterIndex = AvailableDebugCharacters.Num() - 1;
+		}
+	}
+
+	DebugFocusCharacter = AvailableDebugCharacters[FocusedDebugCharacterIndex];
+}
+
+void UPRDebugComponent::IA_OpenOverlayMenu(const FInputActionValue& Value)
+{
+	OpenOverlayMenu(Value.Get<bool>());
+}
+
+void UPRDebugComponent::IA_OverlayMenuCycle(const FInputActionValue& Value)
+{
+	OverlayMenuCycle(Value.GetMagnitude() > 0);
+}
+
+void UPRDebugComponent::IA_ToggleDebugMesh(const FInputActionValue& Value)
+{
+	if (bDebugMeshVisible)
+	{
+		OwnerCharacter->SetVisibleMesh(DefaultSkeletalMesh);
+	}
+	else
+	{
+		//DefaultSkeletalMesh = OwnerCharacter->GetMesh()->GetSkeletalMeshAsset();
+		DefaultSkeletalMesh = OwnerCharacter->GetMesh()->SkeletalMesh;
+		OwnerCharacter->SetVisibleMesh(DebugSkeletalMesh);
+	}
+	bDebugMeshVisible = !bDebugMeshVisible;
+}
+
+void UPRDebugComponent::IA_ToggleSlomo(const FInputActionValue& Value)
+{
+	bSlomo = !bSlomo;
+	ToggleGlobalTimeDilationLocal(bSlomo ? 0.15f : 1.f);
 }

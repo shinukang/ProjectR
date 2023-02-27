@@ -4,6 +4,7 @@
 
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/ActorComponent.h"
+#include "InputMappingContext.h"
 #include "PRDebugComponent.generated.h"
 
 class APRBaseCharacter;
@@ -46,35 +47,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
 	void ToggleGlobalTimeDilationLocal(float TimeDilation);
 
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleSlomo();
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleHud() { bShowHud = !bShowHud; }
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleDebugView();
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Debug")
 	void OpenOverlayMenu(bool bValue);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Debug")
 	void OverlayMenuCycle(bool bValue);
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleDebugMesh();
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleTraces() { bShowTraces = !bShowTraces; }
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleDebugShapes() { bShowDebugShapes = !bShowDebugShapes; }
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleLayerColors() { bShowLayerColors = !bShowLayerColors; }
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void ToggleCharacterInfo() { bShowCharacterInfo = !bShowCharacterInfo; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
 	bool GetDebugView() { return bDebugView; }
@@ -87,9 +64,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
 	bool GetShowLayerColors() { return bShowLayerColors; }
-
-	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
-	void FocusedDebugCharacterCycle(bool bValue);
 
 	// utility functions to draw trace debug shapes,
 	// which are derived from Engine/Private/KismetTraceUtils.h.
@@ -130,6 +104,40 @@ public:
 protected:
 	void DetectDebuggableCharactersInWorld();
 
+private:
+	UFUNCTION()
+	void IA_ToggleHud(const FInputActionValue& Value) { bShowHud = !bShowHud; }
+
+	UFUNCTION()
+	void IA_ToggleTraces(const FInputActionValue& Value) { bShowTraces = !bShowTraces; }
+
+	UFUNCTION()
+	void IA_ToggleLayerColors(const FInputActionValue& Value) { bShowLayerColors = !bShowLayerColors; }
+
+	UFUNCTION()
+	void IA_ToggleShapes(const FInputActionValue& Value) { bShowDebugShapes = !bShowDebugShapes; }
+
+	UFUNCTION()
+	void IA_ToggleCharacterInfo(const FInputActionValue& Value) { bShowCharacterInfo = !bShowCharacterInfo; }
+
+	UFUNCTION()
+	void IA_ToggleDebugView(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void IA_FocusedCharacterCycleAction(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void IA_OpenOverlayMenu(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void IA_OverlayMenuCycle(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void IA_ToggleDebugMesh(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void IA_ToggleSlomo(const FInputActionValue& Value);
+
 public:
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Debug")
 	TObjectPtr<APRBaseCharacter> OwnerCharacter;
@@ -151,6 +159,11 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Debug")
 	TObjectPtr<APRBaseCharacter> DebugFocusCharacter = nullptr;
+
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PR|Input")
+	TObjectPtr<UInputMappingContext> DebugInputMappingContext = nullptr;
+
 private:
 	static bool bDebugView;
 
