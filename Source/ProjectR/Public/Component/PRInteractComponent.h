@@ -26,24 +26,25 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
 	//
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void SetupWidget();
 
-	// HUD Ref
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widget")
-	TObjectPtr<UPRWidgetBase> HUD = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	TObjectPtr<UInputMappingContext> InteractInputMappingContext = nullptr;
-
 private:
-
 	// On Interact Action 
 	UFUNCTION()
 	void IA_Interact(const FInputActionValue& Value);
 
+public:
+	// HUD Ref
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widget")
+	TObjectPtr<UPRWidgetBase> HUD = nullptr;
+
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputMappingContext> InteractInputMappingContext = nullptr;
+
+private:
 	// Check the interactive actor
 	AActor* CheckInteractiveActor();
 

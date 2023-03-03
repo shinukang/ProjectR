@@ -8,7 +8,7 @@
 #include "PRInventoryComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(Blueprintable, BlueprintType)
 class PROJECTR_API UPRInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -25,10 +25,14 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	UFUNCTION()
+	void IA_OpenInventory(const FInputActionValue& Value);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TObjectPtr<UInputMappingContext> InventoryInputMappingContext = nullptr;
+
+private:
 
 	
 	

@@ -33,3 +33,22 @@ void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 	// ...
 }
+
+
+void UPRInventoryComponent::IA_OpenInventory(const FInputActionValue& Value)
+{
+	if (UPRInteractComponent* InteractComp = Cast<UPRInteractComponent>(GetOwner()->GetComponentByClass(UPRInteractComponent::StaticClass())))
+	{
+		if(Value.Get<bool>())
+		{
+			//IPRWidgetInterface::Execute_UpdateWidgetMode(InteractComp->HUD, EInputMode::Inventory);
+			UE_LOG(LogTemp, Warning, TEXT("Open Inventory"));
+		}
+		else
+		{
+			//IPRWidgetInterface::Execute_UpdateWidgetMode(InteractComp->HUD, EWidgetMode::Normal);
+			UE_LOG(LogTemp, Warning, TEXT("Close Inventory"));
+		}
+	
+	}
+}

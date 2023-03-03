@@ -15,7 +15,7 @@ class PROJECTR_API URyanLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	static void SetupInputs(UObject* Object, APlayerController* PlayerController, UInputMappingContext* InputMappingContext, bool bNeedToClearMappings=false);
 
 };

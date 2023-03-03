@@ -1198,7 +1198,7 @@ void APRBaseCharacter::LimitRotation(float AimYawMin, float AimYawMax, float Int
 	}
 }
 
-void APRBaseCharacter::OnForwardMovement_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_ForwardMovement_Implementation(const FInputActionValue& Value)
 {
 	if (MovementState == EPRMovementState::Grounded || MovementState == EPRMovementState::InAir)
 	{
@@ -1208,7 +1208,7 @@ void APRBaseCharacter::OnForwardMovement_Implementation(const FInputActionValue&
 	}
 }
 
-void APRBaseCharacter::OnRightMovement_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_RightMovement_Implementation(const FInputActionValue& Value)
 {
 	if (MovementState == EPRMovementState::Grounded || MovementState == EPRMovementState::InAir)
 	{
@@ -1218,17 +1218,17 @@ void APRBaseCharacter::OnRightMovement_Implementation(const FInputActionValue& V
 	}
 }
 
-void APRBaseCharacter::OnCameraUp_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_CameraUp_Implementation(const FInputActionValue& Value)
 {
 	AddControllerPitchInput(LookUpDownRate * Value.Get<float>());
 }
 
-void APRBaseCharacter::OnCameraRight_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_CameraRight_Implementation(const FInputActionValue& Value)
 {
 	AddControllerYawInput(LookLeftRightRate * Value.Get<float>());
 }
 
-void APRBaseCharacter::OnJump_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_Jump_Implementation(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
@@ -1263,7 +1263,7 @@ void APRBaseCharacter::OnJump_Implementation(const FInputActionValue& Value)
 	}
 }
 
-void APRBaseCharacter::OnSprint_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_Sprint_Implementation(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
@@ -1275,7 +1275,7 @@ void APRBaseCharacter::OnSprint_Implementation(const FInputActionValue& Value)
 	}
 }
 
-void APRBaseCharacter::OnAim_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_Aim_Implementation(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
@@ -1295,7 +1295,7 @@ void APRBaseCharacter::OnAim_Implementation(const FInputActionValue& Value)
 	}
 }
 
-void APRBaseCharacter::OnCameraTap_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_CameraTap_Implementation(const FInputActionValue& Value)
 {
 	if (ViewMode == EPRViewMode::FirstPerson)
 	{
@@ -1307,7 +1307,7 @@ void APRBaseCharacter::OnCameraTap_Implementation(const FInputActionValue& Value
 	SetRightShoulder(!bRightShoulder);
 }
 
-void APRBaseCharacter::OnCameraHeld_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_CameraHeld_Implementation(const FInputActionValue& Value)
 {
 	// Switch camera mode
 	if (ViewMode == EPRViewMode::FirstPerson)
@@ -1320,7 +1320,7 @@ void APRBaseCharacter::OnCameraHeld_Implementation(const FInputActionValue& Valu
 	}
 }
 
-void APRBaseCharacter::OnStance_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_Stance_Implementation(const FInputActionValue& Value)
 {
 	// Stance Action: Press "Stance Action" to toggle Standing / Crouching, double tap to Roll.
 
@@ -1368,7 +1368,7 @@ void APRBaseCharacter::OnStance_Implementation(const FInputActionValue& Value)
 	// Notice: MovementState == EPRMovementState::InAir case is removed
 }
 
-void APRBaseCharacter::OnWalk_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_Walk_Implementation(const FInputActionValue& Value)
 {
 	if (DesiredGait == EPRGait::Walking)
 	{
@@ -1380,7 +1380,7 @@ void APRBaseCharacter::OnWalk_Implementation(const FInputActionValue& Value)
 	}
 }
 
-void APRBaseCharacter::OnRagdoll_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_Ragdoll_Implementation(const FInputActionValue& Value)
 {
 	// Ragdoll Action: Press "Ragdoll Action" to toggle the ragdoll state on or off.
 
@@ -1394,7 +1394,7 @@ void APRBaseCharacter::OnRagdoll_Implementation(const FInputActionValue& Value)
 	}
 }
 
-void APRBaseCharacter::OnVelocityDirection_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_VelocityDirection_Implementation(const FInputActionValue& Value)
 {
 	// Select Rotation Mode: Switch the desired (default) rotation mode to Velocity or Looking Direction.
 	// This will be the mode the character reverts back to when un-aiming
@@ -1402,7 +1402,7 @@ void APRBaseCharacter::OnVelocityDirection_Implementation(const FInputActionValu
 	SetRotationMode(EPRRotationMode::VelocityDirection);
 }
 
-void APRBaseCharacter::OnLookingDirection_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::IA_LookingDirection_Implementation(const FInputActionValue& Value)
 {
 	SetDesiredRotationMode(EPRRotationMode::LookingDirection);
 	SetRotationMode(EPRRotationMode::LookingDirection);

@@ -17,4 +17,7 @@ class PROJECTR_API UPRWidgetBase : public UUserWidget, public IPRWidgetInterface
 
 public:
 	void UpdateInteractInfo_Implementation(const FName& ObjectID) override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetInventoryVisiblity(bool bShow);
 };

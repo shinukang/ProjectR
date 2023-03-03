@@ -44,6 +44,8 @@ void UPRInteractComponent::BeginPlay()
 	OwnerCam = OwnerController->PlayerCameraManager;
 
 	SetupWidget();
+
+	URyanLibrary::SetupInputs(this, OwnerController, InteractInputMappingContext);
 }
 
 // Called every frame

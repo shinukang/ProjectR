@@ -6,8 +6,25 @@
 #include "Character/PRCharacter.h"
 #include "Character/PRPlayerCameraManager.h"
 #include "Component/PRDebugComponent.h"
+#include "Component/PRInteractComponent.h"
+#include "Component/PRInventoryComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Library/RyanLibrary.h"
+
+void APRPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(UPRInteractComponent* InteractComponent = Cast<UPRInteractComponent>(GetComponentByClass(UPRInteractComponent::StaticClass())))
+	{
+		PRInteractComponent = InteractComponent;
+	}
+
+	if(UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
+	{
+		PRInventoryComponent = InventoryComponent;
+	}
+}
 
 void APRPlayerController::OnPossess(APawn* NewPawn)
 {
@@ -37,7 +54,6 @@ void APRPlayerController::OnRep_Pawn()
 	SetupCamera();
 	
 	URyanLibrary::SetupInputs(PossessedCharacter, this, DefaultInputMappingContext, true);
-	//URyanLibrary::SetupInputs(this, this, DebugInputMappingContext);
 	
 	if (!PossessedCharacter) return;
 
@@ -62,3 +78,87 @@ void APRPlayerController::SetupCamera()
 		CastedMgr->OnPossess(PossessedCharacter);
 	}
 }
+
+void APRPlayerController::IA_ForwardMovement_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnForwardMovement(Value);
+}
+
+void APRPlayerController::IA_RightMovement_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnRightMovement(Value);
+}
+
+void APRPlayerController::IA_CameraUp_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnCameraUp(Value);
+}
+
+void APRPlayerController::IA_CameraRight_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnCameraRight(Value);
+}
+
+void APRPlayerController::IA_Jump_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnJump(Value);
+}
+
+void APRPlayerController::IA_Sprint_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnSprint(Value);
+}
+
+void APRPlayerController::IA_Aim_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnAim(Value);
+}
+
+void APRPlayerController::IA_CameraTap_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnCameraTap(Value);
+}
+
+void APRPlayerController::IA_CameraHeld_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnCameraHeld(Value);
+}
+
+void APRPlayerController::IA_Stance_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnStance(Value);
+}
+
+void APRPlayerController::IA_Walk_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnWalk(Value);
+}
+
+void APRPlayerController::IA_Ragdoll_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnRagdoll(Value);
+}
+
+void APRPlayerController::IA_VelocityDirection_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnVelocityDirection(Value);
+}
+
+void APRPlayerController::IA_LookingDirection_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnLookingDirection(Value);
+}
+
+void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Value)
+{
+	if(PRInteractComponent)
+	{
+		//PRInteractComponent->
+	}
+}
+
+
+
+
+
+

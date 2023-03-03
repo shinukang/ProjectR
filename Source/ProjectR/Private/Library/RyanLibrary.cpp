@@ -30,6 +30,14 @@ void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerControl
 				EnhancedInputComponent->BindAction(UniqueAction, ETriggerEvent::Triggered, Object, UniqueAction->GetFName());
 			}
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("EnhancedInputComponent is null"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("InputMappingContext is null"));
 	}
 
 	if(UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -42,6 +50,10 @@ void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerControl
 			Subsystem->ClearAllMappings();
 		}
 		Subsystem->AddMappingContext(InputMappingContext, 1, Options);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LocalPlayerSubsystem is null"));
 	}
 }
 
