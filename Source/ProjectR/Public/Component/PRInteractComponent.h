@@ -23,34 +23,25 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Interact")
+	void OnPlayerControllerInitialized(APlayerController* Controller);
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	//
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
-	void SetupWidget();
-
-private:
-	// On Interact Action 
-	UFUNCTION()
-	void IA_Interact(const FInputActionValue& Value);
 
 public:
-	// HUD Ref
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widget")
-	TObjectPtr<UPRWidgetBase> HUD = nullptr;
-
-protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	TObjectPtr<UInputMappingContext> InteractInputMappingContext = nullptr;
+	// Currently detected actor reference
+	TObjectPtr<AActor> DetectedActor = nullptr;
 
 private:
 	// Check the interactive actor
 	AActor* CheckInteractiveActor();
 
-	// Character Camera Refs
+	// Character camera reference
 	TObjectPtr<APlayerCameraManager> OwnerCam = nullptr;
 
-	// Detected Actor Refs
-	TObjectPtr<AActor> DetectedActor = nullptr;
+	// HUD reference
+	TObjectPtr<UPRWidgetBase> HUD = nullptr;
+
 };

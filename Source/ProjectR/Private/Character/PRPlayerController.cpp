@@ -8,6 +8,7 @@
 #include "Component/PRDebugComponent.h"
 #include "Component/PRInteractComponent.h"
 #include "Component/PRInventoryComponent.h"
+#include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Library/RyanLibrary.h"
 
@@ -15,15 +16,18 @@ void APRPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(UPRInteractComponent* InteractComponent = Cast<UPRInteractComponent>(GetComponentByClass(UPRInteractComponent::StaticClass())))
+	if (UPRInteractComponent* InteractComponent = Cast<UPRInteractComponent>(GetComponentByClass(UPRInteractComponent::StaticClass())))
 	{
 		PRInteractComponent = InteractComponent;
+		this->OnPlayerControllerInitialized.AddUObject(PRInteractComponent, &UPRInteractComponent::OnPlayerControllerInitialized);
 	}
 
-	if(UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
+	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
 	{
 		PRInventoryComponent = InventoryComponent;
+		//this->OnPlayerControllerInitialized.AddUObject(PRInventoryComponent, &UPRInventoryComponent::OnPlayerControllerInitialized);
 	}
+
 }
 
 void APRPlayerController::OnPossess(APawn* NewPawn)
@@ -36,7 +40,9 @@ void APRPlayerController::OnPossess(APawn* NewPawn)
 		SetupCamera();
 	}
 
-	URyanLibrary::SetupInputs(PossessedCharacter, this, DefaultInputMappingContext, true);
+	SetupWidget();
+
+	URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
 
 	if (!IsValid(PossessedCharacter)) return;
 	
@@ -45,15 +51,19 @@ void APRPlayerController::OnPossess(APawn* NewPawn)
 	{
 		DebugComp->OnPlayerControllerInitialized(this);
 	}
+
+	
 }
 
 void APRPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
 	PossessedCharacter = Cast<APRBaseCharacter>(GetPawn());
+
 	SetupCamera();
+	SetupWidget();
 	
-	URyanLibrary::SetupInputs(PossessedCharacter, this, DefaultInputMappingContext, true);
+	URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
 	
 	if (!PossessedCharacter) return;
 
@@ -77,6 +87,11 @@ void APRPlayerController::SetupCamera()
 	{
 		CastedMgr->OnPossess(PossessedCharacter);
 	}
+}
+
+UPRWidgetBase* APRPlayerController::GetHUD_Implementation()
+{
+	return HUD.Get();
 }
 
 void APRPlayerController::IA_ForwardMovement_Implementation(const FInputActionValue& Value)
@@ -153,7 +168,11 @@ void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Va
 {
 	if(PRInteractComponent)
 	{
-		//PRInteractComponent->
+		FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(PRInteractComponent->DetectedActor);
+
+		//FPRObject DetectedObjectData = UPRGameInstance::GetObjectData(DetectedObjectID);
+
+		//UE_LOG(LogTemp, Warning, TEXT("%s"), *DetectedObjectData.ObjectName.ToString());
 	}
 }
 

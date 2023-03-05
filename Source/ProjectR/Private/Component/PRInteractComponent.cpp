@@ -27,7 +27,6 @@ UPRInteractComponent::UPRInteractComponent()
 	// ...
 }
 
-
 // Called when the game starts
 void UPRInteractComponent::BeginPlay()
 {
@@ -42,8 +41,12 @@ void UPRInteractComponent::BeginPlay()
 
 	// Set OwnerCam
 	OwnerCam = OwnerController->PlayerCameraManager;
+}
 
-	SetupWidget();
+void UPRInteractComponent::OnPlayerControllerInitialized(APlayerController* PlayerController)
+{
+	HUD = IPRWidgetInterface::Execute_GetHUD(PlayerController);
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *HUD->GetName())
 }
 
 // Called every frame
@@ -94,9 +97,3 @@ AActor* UPRInteractComponent::CheckInteractiveActor()
 	}
 	return nullptr;
 }
-
-void UPRInteractComponent::IA_Interact(const FInputActionValue& Value)
-{
-	UE_LOG(LogTemp, Warning, TEXT("IA_Interact"));
-}
-

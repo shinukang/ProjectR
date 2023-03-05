@@ -24,15 +24,15 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-private:
-	UFUNCTION()
-	void IA_OpenInventory(const FInputActionValue& Value);
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void OnPlayerControllerInitialized(APlayerController* Controller);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TObjectPtr<UInputMappingContext> InventoryInputMappingContext = nullptr;
 
 private:
+	TMap<FPRObject, int32> Inventory;
 
 	
 	

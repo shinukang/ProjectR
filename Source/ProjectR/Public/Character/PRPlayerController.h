@@ -5,11 +5,14 @@
 #include "GameFramework/PlayerController.h"
 #include "Interface/PRInteractInterface.h"
 #include "Widget/PRWidgetBase.h"
+#include "Component/PRInventoryComponent.h"
+#include "Component/PRInteractComponent.h"
 #include "PRPlayerController.generated.h"
 
 class APRBaseCharacter;
 class UInputMappingContext;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerControllerInitialized, APlayerController*)
 /**
  * Player controller class
  */
@@ -27,11 +30,13 @@ public:
 
 	virtual void SetupInputComponent() override;
 
-	UFUNCTION(BlueprintCallable)
-	void SetInputMode(EInputMode InputMode);
+	UPRWidgetBase* GetHUD_Implementation() override;
 
 protected:
 	void SetupCamera();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetupWidget();
 
 	/** Inputs On Character */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
@@ -84,6 +89,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "PR")
 	TObjectPtr<APRBaseCharacter> PossessedCharacter = nullptr;
 
+	/* HUD reference */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Widget")
+	TObjectPtr<UPRWidgetBase> HUD = nullptr;
+
+	FOnPlayerControllerInitialized OnPlayerControllerInitialized;
+
+protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultInputMappingContext = nullptr;
 

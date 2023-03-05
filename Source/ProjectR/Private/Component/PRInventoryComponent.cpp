@@ -16,7 +16,6 @@ UPRInventoryComponent::UPRInventoryComponent()
 	// ...
 }
 
-
 // Called when the game starts
 void UPRInventoryComponent::BeginPlay()
 {
@@ -25,6 +24,10 @@ void UPRInventoryComponent::BeginPlay()
 	URyanLibrary::SetupInputs(this, Cast<APlayerController>(GetOwner()), InventoryInputMappingContext);
 }
 
+void UPRInventoryComponent::OnPlayerControllerInitialized(APlayerController* Controller)
+{
+	//HUD = IPRWidgetInterface::Execute_GetHUD(PlayerController);
+}
 
 // Called every frame
 void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

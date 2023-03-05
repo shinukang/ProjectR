@@ -27,6 +27,6 @@ public:
 	void UpdateInteractInfo(const FName& ObjectID);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Inventory")
-	void UpdateWidgetMode(EInputMode WidgetMode);
+	UPRWidgetBase* GetHUD();
 
 };
