@@ -33,6 +33,9 @@ public:
 	UPRWidgetBase* GetHUD_Implementation() override;
 
 protected:
+
+	void Init();
+
 	void SetupCamera();
 
 	UFUNCTION(BlueprintImplementableEvent)
@@ -83,6 +86,9 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_Interact(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_Inventory(const FInputActionValue& Value);
 
 public:
 	/** Main character reference */

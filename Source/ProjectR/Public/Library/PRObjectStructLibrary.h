@@ -23,13 +23,13 @@ struct FPRObject : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DisplayName")
-	FText ObjectName = FText::FromString(TEXT("None"));
+	FText Name = FText::FromString(TEXT("None"));
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Icon")
 	TObjectPtr<UImage> Icon = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Type")
-	EPRObjectType ObjectType = EPRObjectType::None;
+	EPRObjectType Type = EPRObjectType::None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	bool bIsStackable = false;
@@ -44,8 +44,26 @@ struct FPRObject : public FTableRowBase
 
 	FPRObject(FPRObject* StructRef)
 	{
-		this->ObjectName = StructRef->ObjectName;
+		this->Name = StructRef->Name;
 		this->Icon = StructRef->Icon;
+		this->Type = StructRef->Type;
+		this->bIsStackable = StructRef->bIsStackable;
 		this->Description = StructRef->Description;
 	}
+
+	bool operator==(const FPRObject& Other) const
+	{
+		return Equals(Other);
+	}
+
+	bool Equals(const FPRObject& Other) const
+	{
+		return this->Name.EqualTo(Other.Name);
+	}
 };
+
+FORCEINLINE uint32 GetTypeHash(const FPRObject& ObjectData)
+{
+	uint32 Hash = FCrc::MemCrc32(&ObjectData, sizeof(FPRObject));
+	return Hash;
+}

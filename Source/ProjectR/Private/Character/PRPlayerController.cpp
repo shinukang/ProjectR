@@ -15,6 +15,13 @@
 void APRPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void APRPlayerController::Init()
+{
+	URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
+
+	SetupWidget();
 
 	if (UPRInteractComponent* InteractComponent = Cast<UPRInteractComponent>(GetComponentByClass(UPRInteractComponent::StaticClass())))
 	{
@@ -25,10 +32,17 @@ void APRPlayerController::BeginPlay()
 	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
 	{
 		PRInventoryComponent = InventoryComponent;
-		//this->OnPlayerControllerInitialized.AddUObject(PRInventoryComponent, &UPRInventoryComponent::OnPlayerControllerInitialized);
+		this->OnPlayerControllerInitialized.AddUObject(PRInventoryComponent, &UPRInventoryComponent::OnPlayerControllerInitialized);
 	}
 
+	if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))
+	{
+		this->OnPlayerControllerInitialized.AddUObject(DebugComponent, &UPRDebugComponent::OnPlayerControllerInitialized);
+	}
+
+	OnPlayerControllerInitialized.Broadcast(this);
 }
+
 
 void APRPlayerController::OnPossess(APawn* NewPawn)
 {
@@ -40,38 +54,24 @@ void APRPlayerController::OnPossess(APawn* NewPawn)
 		SetupCamera();
 	}
 
-	SetupWidget();
-
-	URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
-
-	if (!IsValid(PossessedCharacter)) return;
-	
-	UPRDebugComponent* DebugComp = Cast<UPRDebugComponent>(PossessedCharacter->GetComponentByClass(UPRDebugComponent::StaticClass()));
-	if (DebugComp)
+	if (PossessedCharacter)
 	{
-		DebugComp->OnPlayerControllerInitialized(this);
+		Init();
 	}
-
-	
 }
 
 void APRPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
+
 	PossessedCharacter = Cast<APRBaseCharacter>(GetPawn());
 
 	SetupCamera();
-	SetupWidget();
-	
-	URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
-	
-	if (!PossessedCharacter) return;
 
-	UPRDebugComponent* DebugComp = Cast<UPRDebugComponent>(PossessedCharacter->GetComponentByClass(UPRDebugComponent::StaticClass()));
-	if (DebugComp)
+	if(PossessedCharacter)
 	{
-		DebugComp->OnPlayerControllerInitialized(this);
-	}
+		Init();
+	} 
 }
 
 void APRPlayerController::SetupInputComponent()
@@ -166,18 +166,27 @@ void APRPlayerController::IA_LookingDirection_Implementation(const FInputActionV
 
 void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Value)
 {
-	if(PRInteractComponent)
+	if(PRInteractComponent && PRInventoryComponent)
 	{
-		FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(PRInteractComponent->DetectedActor);
+		const FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(PRInteractComponent->DetectedActor);
+		const int32 DetectedObjectAmount = IPRInteractInterface::Execute_GetObjectAmount(PRInteractComponent->DetectedActor);
 
-		//FPRObject DetectedObjectData = UPRGameInstance::GetObjectData(DetectedObjectID);
-
-		//UE_LOG(LogTemp, Warning, TEXT("%s"), *DetectedObjectData.ObjectName.ToString());
+		PRInventoryComponent->TryAddToInventory(DetectedObjectID, DetectedObjectAmount);
 	}
 }
 
+void APRPlayerController::IA_Inventory_Implementation(const FInputActionValue& Value)
+{
+	const bool InWidget = Value.Get<bool>();
 
+	if(InWidget)
+	{
+		URyanLibrary::SetupInputs(this, this, RestrictedInputMappingContext, true);
+	}
+	else
+	{
+		URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
+	}
 
-
-
-
+	HUD->SetInventoryVisiblity(InWidget);
+}

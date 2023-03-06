@@ -24,7 +24,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Interact")
-	void OnPlayerControllerInitialized(APlayerController* Controller);
+	void OnPlayerControllerInitialized(APlayerController* PlayerController);
 	
 protected:
 	// Called when the game starts

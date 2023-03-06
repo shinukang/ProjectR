@@ -9,12 +9,6 @@
 #include "GameFramework/Character.h"
 #include "Interface/PRInteractInterface.h"
 #include "Interface/PRWidgetInterface.h"
-#include "Kismet/DataTableFunctionLibrary.h"
-#include "Kismet/KismetStringLibrary.h"
-#include "Library/PRObjectStructLibrary.h"
-#include <EnhancedInputComponent.h>
-#include "EnhancedInput/Public/InputMappingContext.h"
-#include "EnhancedInput/Public/EnhancedInputSubsystems.h"
 #include "Library/RyanLibrary.h"
 
 // Sets default values for this component's properties
@@ -54,14 +48,14 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if(AActor* NewDetectedActor = CheckInteractiveActor())
+	if(AActor* NewDetectedObject = CheckInteractiveActor())
 	{
-		if(DetectedActor != NewDetectedActor)
+		if(DetectedActor != NewDetectedObject)
 		{
 			// UI update
-			DetectedActor = NewDetectedActor;
-			const FName DetectedActorName = IPRInteractInterface::Execute_GetObjectID(DetectedActor);
-			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, DetectedActorName);
+			DetectedActor = NewDetectedObject;
+			const FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(DetectedActor);
+			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, DetectedObjectID);
 		}
 	}
 	else

@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "InputMappingContext.h"
 #include "Components/ActorComponent.h"
+#include "Library/PRObjectStructLibrary.h"
+#include "Widget/PRWidgetBase.h"
 #include "PRInventoryComponent.generated.h"
 
 
@@ -20,22 +22,25 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	//
+	void TryAddToInventory(FName ObjectID, int32 ObjectAmount);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void OnPlayerControllerInitialized(APlayerController* PlayerController);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void OnPlayerControllerInitialized(APlayerController* Controller);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TObjectPtr<UInputMappingContext> InventoryInputMappingContext = nullptr;
+	TObjectPtr<UDataTable> ObjectDataTable = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TMap<FName, int32> Inventory;
 
 private:
-	TMap<FPRObject, int32> Inventory;
-
-	
-	
-
-
+	// HUD reference
+	TObjectPtr<UPRWidgetBase> HUD = nullptr;	
 };

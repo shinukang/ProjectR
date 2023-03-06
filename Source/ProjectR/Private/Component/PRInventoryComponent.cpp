@@ -20,13 +20,11 @@ UPRInventoryComponent::UPRInventoryComponent()
 void UPRInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	URyanLibrary::SetupInputs(this, Cast<APlayerController>(GetOwner()), InventoryInputMappingContext);
 }
 
-void UPRInventoryComponent::OnPlayerControllerInitialized(APlayerController* Controller)
+void UPRInventoryComponent::OnPlayerControllerInitialized(APlayerController* PlayerController)
 {
-	//HUD = IPRWidgetInterface::Execute_GetHUD(PlayerController);
+	HUD = IPRWidgetInterface::Execute_GetHUD(PlayerController);
 }
 
 // Called every frame
@@ -35,4 +33,21 @@ void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+void UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount)
+{
+	// 데이터 테이블에 존재하는 ID인지 확인
+	if (const FPRObject* ObjectData = ObjectDataTable->FindRow<FPRObject>(ObjectID, FString()))
+	{
+		if(Inventory.Contains(ObjectID))// 현재 인벤토리에 존재하면
+		{
+			if(ObjectData->bIsStackable) // 쌓을 수 있는 아이템인지 확인하고 맞다면
+			{
+				Inventory[ObjectID] += ObjectAmount; // 수량 추가
+			}
+		}
+		// 존재하지 않으면
+		Inventory.Add(ObjectID, ObjectAmount); // 오브젝트 추가
+	}
 }

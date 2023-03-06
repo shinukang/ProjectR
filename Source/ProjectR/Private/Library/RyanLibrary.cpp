@@ -43,6 +43,7 @@ void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerControl
 	if(UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 	{
 		FModifyContextOptions Options;
+		Options.bIgnoreAllPressedKeysUntilRelease = 0;
 		Options.bForceImmediately = 1;
 
 		if(bNeedToClearMappings)
