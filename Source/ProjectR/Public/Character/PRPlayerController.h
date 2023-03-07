@@ -90,6 +90,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_Inventory(const FInputActionValue& Value);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_Cursor(const FInputActionValue& Value);
+
 public:
 	/** Main character reference */
 	UPROPERTY(BlueprintReadOnly, Category = "PR")

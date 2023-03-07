@@ -19,5 +19,8 @@ public:
 	void UpdateInteractInfo_Implementation(const FName& ObjectID) override;
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void SetInventoryVisiblity(bool bShow);
+	void SetInventoryVisibility(bool bShow);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateSelectedSlot(float Angle);
 };

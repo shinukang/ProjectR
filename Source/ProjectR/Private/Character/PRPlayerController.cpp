@@ -10,6 +10,7 @@
 #include "Component/PRInventoryComponent.h"
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Library/RyanLibrary.h"
 
 void APRPlayerController::BeginPlay()
@@ -188,5 +189,17 @@ void APRPlayerController::IA_Inventory_Implementation(const FInputActionValue& V
 		URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
 	}
 
-	HUD->SetInventoryVisiblity(InWidget);
+	HUD->SetInventoryVisibility(InWidget);
+}
+
+void APRPlayerController::IA_Cursor_Implementation(const FInputActionValue& Value)
+{
+	FVector2D MousePosition, ViewportSize;
+	GetMousePosition(MousePosition.X, MousePosition.Y);
+	GEngine->GameViewport->GetViewportSize(ViewportSize);
+
+	const FVector StartPosition(MousePosition.X, MousePosition.Y, 0.0f);
+	const FVector TargetPosition(ViewportSize.X  / 2.0f, ViewportSize.Y / 2.0f, 0.0f);
+
+	HUD->UpdateSelectedSlot(180.0f - UKismetMathLibrary::FindLookAtRotation(StartPosition, TargetPosition).Yaw);
 }
