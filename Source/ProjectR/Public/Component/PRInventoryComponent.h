@@ -9,7 +9,6 @@
 #include "Widget/PRWidgetBase.h"
 #include "PRInventoryComponent.generated.h"
 
-
 UCLASS(Blueprintable, BlueprintType)
 class PROJECTR_API UPRInventoryComponent : public UActorComponent
 {
@@ -23,7 +22,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	//
-	void TryAddToInventory(FName ObjectID, int32 ObjectAmount);
+	bool TryAddToInventory(FName ObjectID, int32 ObjectAmount);
+
+	void UpdateInventorySlots();
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void OnPlayerControllerInitialized(APlayerController* PlayerController);
@@ -38,7 +39,10 @@ protected:
 	TObjectPtr<UDataTable> ObjectDataTable = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TMap<FName, int32> Inventory;
+	TArray<FPRInventorySlotData> Inventory;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	uint8 MaxSize = 0;
 
 private:
 	// HUD reference

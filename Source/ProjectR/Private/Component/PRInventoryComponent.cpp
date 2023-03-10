@@ -2,7 +2,7 @@
 
 
 #include "Component/PRInventoryComponent.h"
-
+#include "Library/PRObjectStructLibrary.h"
 #include "Component/PRInteractComponent.h"
 #include "Library/RyanLibrary.h"
 
@@ -20,6 +20,8 @@ UPRInventoryComponent::UPRInventoryComponent()
 void UPRInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	Inventory.SetNum(MaxSize);
+	UpdateInventorySlots();
 }
 
 void UPRInventoryComponent::OnPlayerControllerInitialized(APlayerController* PlayerController)
@@ -35,19 +37,36 @@ void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	// ...
 }
 
-void UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount)
+bool UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount)
 {
 	// 데이터 테이블에 존재하는 ID인지 확인
 	if (const FPRObject* ObjectData = ObjectDataTable->FindRow<FPRObject>(ObjectID, FString()))
 	{
-		if(Inventory.Contains(ObjectID))// 현재 인벤토리에 존재하면
+		const FPRInventorySlotData SlotData = FPRInventorySlotData(ObjectID, ObjectAmount);
+
+		// 인벤토리 내에 같은 ID를 가진 오브젝트가 존재하면
+		if(const int32 Index = Inventory.Find(SlotData) != INDEX_NONE)
 		{
-			if(ObjectData->bIsStackable) // 쌓을 수 있는 아이템인지 확인하고 맞다면
+			if (ObjectData->bIsStackable)
 			{
-				Inventory[ObjectID] += ObjectAmount; // 수량 추가
+				Inventory[Index].Amount += ObjectAmount;
+				UpdateInventorySlots();
+				return true;
 			}
+			return false;
 		}
 		// 존재하지 않으면
-		Inventory.Add(ObjectID, ObjectAmount); // 오브젝트 추가
+		if(const int32 Index = Inventory.Find(FPRInventorySlotData()) != INDEX_NONE)
+		{
+			Inventory[Index] = SlotData;// 오브젝트 추가
+			UpdateInventorySlots();
+			return true;
+		}
 	}
+	return false;
+}
+
+void UPRInventoryComponent::UpdateInventorySlots()
+{
+	HUD->UpdateSlotData(Inventory, MaxSize);
 }

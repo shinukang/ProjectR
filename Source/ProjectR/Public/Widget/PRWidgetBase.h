@@ -23,4 +23,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateSelectedSlot(float Angle);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateSlotData(const TArray<FPRInventorySlotData>& Inventory, int32 InventoryMaxSize);
 };

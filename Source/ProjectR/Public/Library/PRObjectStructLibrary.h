@@ -67,3 +67,37 @@ FORCEINLINE uint32 GetTypeHash(const FPRObject& ObjectData)
 	uint32 Hash = FCrc::MemCrc32(&ObjectData, sizeof(FPRObject));
 	return Hash;
 }
+
+USTRUCT(BlueprintType)
+struct FPRInventorySlotData
+{
+	GENERATED_BODY()
+
+	/*
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SlotData")
+	bool bIsEmptySlot = true;
+	*/
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SlotData")
+	FName ID = NAME_None;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SlotData")
+	int32 Amount = 0;
+
+	FPRInventorySlotData()
+	{
+		
+	}
+
+	FPRInventorySlotData(FName ID, int32 Amount)
+	{
+		//this->bIsEmptySlot = bIsEmptySlot;
+		this->ID = ID;
+		this->Amount = Amount;
+	}
+
+	bool operator==(const FPRInventorySlotData& Other) const
+	{
+		return this->ID.IsEqual(Other.ID, ENameCase::CaseSensitive) ;
+	}
+};
