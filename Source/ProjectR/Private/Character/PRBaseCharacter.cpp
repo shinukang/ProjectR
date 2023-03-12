@@ -1228,6 +1228,24 @@ void APRBaseCharacter::OnCameraRight_Implementation(const FInputActionValue& Val
 	AddControllerYawInput(LookLeftRightRate * Value.Get<float>());
 }
 
+void APRBaseCharacter::OnCameraRot_Implementation(const FInputActionValue& Value)
+{
+	AddControllerYawInput(LookLeftRightRate * Value.Get<FVector2D>().X);
+	AddControllerPitchInput(LookUpDownRate * Value.Get<FVector2D>().Y);
+}
+
+void APRBaseCharacter::OnShoot_Implementation(const FInputActionValue& Value)
+{
+	if(Value.Get<bool>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Press OnShoot"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Release OnShoot"));
+	}
+}
+
 void APRBaseCharacter::OnJump_Implementation(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())

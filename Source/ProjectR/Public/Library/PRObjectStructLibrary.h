@@ -73,11 +73,6 @@ struct FPRInventorySlotData
 {
 	GENERATED_BODY()
 
-	/*
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SlotData")
-	bool bIsEmptySlot = true;
-	*/
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SlotData")
 	FName ID = NAME_None;
 	
@@ -91,7 +86,6 @@ struct FPRInventorySlotData
 
 	FPRInventorySlotData(FName ID, int32 Amount)
 	{
-		//this->bIsEmptySlot = bIsEmptySlot;
 		this->ID = ID;
 		this->Amount = Amount;
 	}

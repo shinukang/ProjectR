@@ -20,7 +20,7 @@ UPRInventoryComponent::UPRInventoryComponent()
 void UPRInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Inventory.SetNum(MaxSize);
+	Inventory.Init(FPRInventorySlotData(), MaxSize);
 	UpdateInventorySlots();
 }
 
@@ -45,7 +45,9 @@ bool UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount
 		const FPRInventorySlotData SlotData = FPRInventorySlotData(ObjectID, ObjectAmount);
 
 		// 인벤토리 내에 같은 ID를 가진 오브젝트가 존재하면
-		if(const int32 Index = Inventory.Find(SlotData) != INDEX_NONE)
+		int32 Index = Inventory.Find(SlotData);
+
+		if(Index != INDEX_NONE)
 		{
 			if (ObjectData->bIsStackable)
 			{
@@ -55,8 +57,9 @@ bool UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount
 			}
 			return false;
 		}
-		// 존재하지 않으면
-		if(const int32 Index = Inventory.Find(FPRInventorySlotData()) != INDEX_NONE)
+		// 존재하지 않으면, 빈 슬롯 중 가장 작은 인덱스를 찾는다.
+		Index = Inventory.Find(FPRInventorySlotData());
+		if (Index != INDEX_NONE)
 		{
 			Inventory[Index] = SlotData;// 오브젝트 추가
 			UpdateInventorySlots();

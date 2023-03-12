@@ -33,7 +33,6 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TObjectPtr<UDataTable> ObjectDataTable = nullptr;

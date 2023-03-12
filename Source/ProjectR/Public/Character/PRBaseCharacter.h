@@ -314,6 +314,12 @@ public:
 	void OnCameraRight(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	void OnCameraRot(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	void OnShoot(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
 	void OnJump(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")

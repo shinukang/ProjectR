@@ -7,6 +7,7 @@
 #include "Widget/PRWidgetBase.h"
 #include "Component/PRInventoryComponent.h"
 #include "Component/PRInteractComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "PRPlayerController.generated.h"
 
 class APRBaseCharacter;
@@ -32,6 +33,12 @@ public:
 
 	UPRWidgetBase* GetHUD_Implementation() override;
 
+	UFUNCTION(BlueprintCallable)
+	void SetInputModeGameAndUI();
+
+	UFUNCTION(BlueprintCallable)
+	void SetInputModeGameOnly();
+
 protected:
 
 	void Init();
@@ -49,10 +56,17 @@ protected:
 	void IA_RightMovement(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_CameraRot(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_Shoot(const FInputActionValue& Value);
+	/*
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_CameraUp(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_CameraRight(const FInputActionValue& Value);
+	*/
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_Jump(const FInputActionValue& Value);

@@ -90,6 +90,23 @@ void APRPlayerController::SetupCamera()
 	}
 }
 
+void APRPlayerController::SetInputModeGameOnly()
+{
+	FInputModeGameOnly InputMode;
+	InputMode.SetConsumeCaptureMouseDown(true);
+	//UGameplayStatics::SetViewportMouseCaptureMode(this, EMouseCaptureMode::CapturePermanently);
+	UGameplayStatics::SetViewportMouseCaptureMode(this, EMouseCaptureMode::NoCapture);
+	SetInputMode(InputMode);
+}
+
+void APRPlayerController::SetInputModeGameAndUI()
+{
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(true);
+	UGameplayStatics::SetViewportMouseCaptureMode(this, EMouseCaptureMode::NoCapture);
+	SetInputMode(InputMode);
+}
+
 UPRWidgetBase* APRPlayerController::GetHUD_Implementation()
 {
 	return HUD.Get();
@@ -105,6 +122,18 @@ void APRPlayerController::IA_RightMovement_Implementation(const FInputActionValu
 	PossessedCharacter->OnRightMovement(Value);
 }
 
+void APRPlayerController::IA_CameraRot_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnCameraRot(Value);
+}
+
+void APRPlayerController::IA_Shoot_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnShoot(Value);
+}
+
+/*
+
 void APRPlayerController::IA_CameraUp_Implementation(const FInputActionValue& Value)
 {
 	PossessedCharacter->OnCameraUp(Value);
@@ -114,6 +143,8 @@ void APRPlayerController::IA_CameraRight_Implementation(const FInputActionValue&
 {
 	PossessedCharacter->OnCameraRight(Value);
 }
+
+*/
 
 void APRPlayerController::IA_Jump_Implementation(const FInputActionValue& Value)
 {
@@ -167,7 +198,7 @@ void APRPlayerController::IA_LookingDirection_Implementation(const FInputActionV
 
 void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Value)
 {
-	if(PRInteractComponent && PRInventoryComponent)
+	if(PRInteractComponent && PRInventoryComponent && Value.Get<bool>())
 	{
 		if(PRInteractComponent->DetectedActor)
 		{
@@ -181,16 +212,6 @@ void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Va
 void APRPlayerController::IA_Inventory_Implementation(const FInputActionValue& Value)
 {
 	const bool InWidget = Value.Get<bool>();
-
-	if(InWidget)
-	{
-		URyanLibrary::SetupInputs(this, this, RestrictedInputMappingContext, true);
-	}
-	else
-	{
-		URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
-	}
-
 	HUD->SetInventoryVisibility(InWidget);
 }
 

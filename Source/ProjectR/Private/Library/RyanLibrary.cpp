@@ -43,15 +43,15 @@ void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerControl
 	if(UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 	{
 		FModifyContextOptions Options;
-		Options.bIgnoreAllPressedKeysUntilRelease = 0;
-		Options.bForceImmediately = 1;
+		Options.bIgnoreAllPressedKeysUntilRelease = false;
+		Options.bForceImmediately = true;
 
 		if(bNeedToClearMappings)
 		{
 			Subsystem->ClearAllMappings();
 		}
 		Subsystem->AddMappingContext(InputMappingContext, 1, Options);
-	}
+																																		}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("LocalPlayerSubsystem is null"));
