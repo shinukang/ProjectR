@@ -7,6 +7,7 @@
 #include "Widget/PRWidgetBase.h"
 #include "Component/PRInventoryComponent.h"
 #include "Component/PRInteractComponent.h"
+#include "Component/PRStatusComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "PRPlayerController.generated.h"
 
@@ -129,4 +130,6 @@ private:
 	TObjectPtr<UPRInteractComponent> PRInteractComponent = nullptr;
 
 	TObjectPtr<UPRInventoryComponent> PRInventoryComponent = nullptr;
+
+	TObjectPtr<UPRStatusComponent> PRStatusComponent = nullptr;
 };

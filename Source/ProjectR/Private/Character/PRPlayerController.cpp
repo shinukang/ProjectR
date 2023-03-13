@@ -6,8 +6,6 @@
 #include "Character/PRCharacter.h"
 #include "Character/PRPlayerCameraManager.h"
 #include "Component/PRDebugComponent.h"
-#include "Component/PRInteractComponent.h"
-#include "Component/PRInventoryComponent.h"
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -35,6 +33,12 @@ void APRPlayerController::Init()
 	{
 		PRInventoryComponent = InventoryComponent;
 		OnPlayerControllerInitialized.AddUObject(PRInventoryComponent, &UPRInventoryComponent::OnControllerInitialized);
+	}
+
+	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetComponentByClass(UPRStatusComponent::StaticClass())))
+	{
+		PRStatusComponent = StatusComponent;
+		OnPlayerControllerInitialized.AddUObject(PRStatusComponent, &UPRStatusComponent::OnControllerInitialized);
 	}
 
 	if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))
