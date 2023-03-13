@@ -13,6 +13,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "Component/PRStatusComponent.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -305,6 +306,26 @@ void APRBaseCharacter::Server_SetDesiredStance_Implementation(EPRStance NewStanc
 void APRBaseCharacter::SetDesiredGait(const EPRGait NewGait)
 {
 	DesiredGait = NewGait;
+
+	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetController()->GetComponentByClass(UPRStatusComponent::StaticClass())))
+	{
+		switch (DesiredGait)
+		{
+		case EPRGait::Sprinting:
+			StatusComponent->DecreaseStamina();
+			break;
+
+		case EPRGait::Running:
+		case EPRGait::Walking:
+			StatusComponent->IncreaseStamina();
+			break;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StatusComponent Null"));
+	}
+
 	if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		Server_SetDesiredGait(NewGait);

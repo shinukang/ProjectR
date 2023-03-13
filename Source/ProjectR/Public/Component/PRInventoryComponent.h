@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "InputMappingContext.h"
+#include "PRBaseComponent.h"
 #include "Components/ActorComponent.h"
 #include "Library/PRObjectStructLibrary.h"
 #include "Widget/PRWidgetBase.h"
 #include "PRInventoryComponent.generated.h"
 
 UCLASS(Blueprintable, BlueprintType)
-class PROJECTR_API UPRInventoryComponent : public UActorComponent
+class PROJECTR_API UPRInventoryComponent : public UPRBaseComponent
 {
 	GENERATED_BODY()
 
@@ -21,13 +22,9 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	//
 	bool TryAddToInventory(FName ObjectID, int32 ObjectAmount);
 
 	void UpdateInventorySlots();
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void OnPlayerControllerInitialized(APlayerController* PlayerController);
 
 protected:
 	// Called when the game starts
@@ -41,9 +38,5 @@ protected:
 	TArray<FPRInventorySlotData> Inventory;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	uint8 MaxSize = 0;
-
-private:
-	// HUD reference
-	TObjectPtr<UPRWidgetBase> HUD = nullptr;	
+	int32 MaxSize = 0;
 };

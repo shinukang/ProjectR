@@ -24,11 +24,6 @@ void UPRInventoryComponent::BeginPlay()
 	UpdateInventorySlots();
 }
 
-void UPRInventoryComponent::OnPlayerControllerInitialized(APlayerController* PlayerController)
-{
-	HUD = IPRWidgetInterface::Execute_GetHUD(PlayerController);
-}
-
 // Called every frame
 void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -39,6 +34,8 @@ void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 bool UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount)
 {
+	UE_LOG(LogTemp, Warning, TEXT("TryAddToInventory"));
+
 	// 데이터 테이블에 존재하는 ID인지 확인
 	if (const FPRObject* ObjectData = ObjectDataTable->FindRow<FPRObject>(ObjectID, FString()))
 	{

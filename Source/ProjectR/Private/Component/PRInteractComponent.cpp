@@ -37,12 +37,6 @@ void UPRInteractComponent::BeginPlay()
 	OwnerCam = OwnerController->PlayerCameraManager;
 }
 
-void UPRInteractComponent::OnPlayerControllerInitialized(APlayerController* PlayerController)
-{
-	HUD = IPRWidgetInterface::Execute_GetHUD(PlayerController);
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *HUD->GetName())
-}
-
 // Called every frame
 void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -55,7 +49,7 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 			// UI update
 			DetectedActor = NewDetectedObject;
 			const FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(DetectedActor);
-			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, DetectedObjectID);
+			HUD->UpdateInteractInfo(DetectedObjectID);
 		}
 	}
 	else
@@ -64,7 +58,7 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		if(DetectedActor != nullptr)
 		{
 			DetectedActor = nullptr;
-			IPRWidgetInterface::Execute_UpdateInteractInfo(HUD, FName());
+			HUD->UpdateInteractInfo(FName());
 		}
 	}
 }

@@ -11,12 +11,13 @@
  * 
  */
 UCLASS()
-class PROJECTR_API UPRWidgetBase : public UUserWidget, public IPRWidgetInterface
+class PROJECTR_API UPRWidgetBase : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
-	void UpdateInteractInfo_Implementation(const FName& ObjectID) override;
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateInteractInfo(const FName& ObjectID);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SetInventoryVisibility(bool bShow);
@@ -26,4 +27,10 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateSlotData(const TArray<FPRInventorySlotData>& Inventory, int32 InventoryMaxSize);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateHealthPointBar(float HealthPoint);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateStaminaBar(float Stamina);
 };

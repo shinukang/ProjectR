@@ -24,21 +24,22 @@ void APRPlayerController::Init()
 
 	SetupWidget();
 
+	
 	if (UPRInteractComponent* InteractComponent = Cast<UPRInteractComponent>(GetComponentByClass(UPRInteractComponent::StaticClass())))
 	{
 		PRInteractComponent = InteractComponent;
-		this->OnPlayerControllerInitialized.AddUObject(PRInteractComponent, &UPRInteractComponent::OnPlayerControllerInitialized);
+		OnPlayerControllerInitialized.AddUObject(PRInteractComponent, &UPRInteractComponent::OnControllerInitialized);
 	}
 
 	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
 	{
 		PRInventoryComponent = InventoryComponent;
-		this->OnPlayerControllerInitialized.AddUObject(PRInventoryComponent, &UPRInventoryComponent::OnPlayerControllerInitialized);
+		OnPlayerControllerInitialized.AddUObject(PRInventoryComponent, &UPRInventoryComponent::OnControllerInitialized);
 	}
 
 	if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))
 	{
-		this->OnPlayerControllerInitialized.AddUObject(DebugComponent, &UPRDebugComponent::OnPlayerControllerInitialized);
+		OnPlayerControllerInitialized.AddUObject(DebugComponent, &UPRDebugComponent::OnPlayerControllerInitialized);
 	}
 
 	OnPlayerControllerInitialized.Broadcast(this);
@@ -94,8 +95,6 @@ void APRPlayerController::SetInputModeGameOnly()
 {
 	FInputModeGameOnly InputMode;
 	InputMode.SetConsumeCaptureMouseDown(true);
-	//UGameplayStatics::SetViewportMouseCaptureMode(this, EMouseCaptureMode::CapturePermanently);
-	UGameplayStatics::SetViewportMouseCaptureMode(this, EMouseCaptureMode::NoCapture);
 	SetInputMode(InputMode);
 }
 
@@ -103,7 +102,6 @@ void APRPlayerController::SetInputModeGameAndUI()
 {
 	FInputModeGameAndUI InputMode;
 	InputMode.SetHideCursorDuringCapture(true);
-	UGameplayStatics::SetViewportMouseCaptureMode(this, EMouseCaptureMode::NoCapture);
 	SetInputMode(InputMode);
 }
 
@@ -131,20 +129,6 @@ void APRPlayerController::IA_Shoot_Implementation(const FInputActionValue& Value
 {
 	PossessedCharacter->OnShoot(Value);
 }
-
-/*
-
-void APRPlayerController::IA_CameraUp_Implementation(const FInputActionValue& Value)
-{
-	PossessedCharacter->OnCameraUp(Value);
-}
-
-void APRPlayerController::IA_CameraRight_Implementation(const FInputActionValue& Value)
-{
-	PossessedCharacter->OnCameraRight(Value);
-}
-
-*/
 
 void APRPlayerController::IA_Jump_Implementation(const FInputActionValue& Value)
 {

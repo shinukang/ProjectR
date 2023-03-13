@@ -8,11 +8,12 @@
 #include "Widget/PRWidgetBase.h"
 #include "Blueprint/UserWidget.h"
 #include "InputMappingContext.h"
+#include "PRBaseComponent.h"
 #include "PRInteractComponent.generated.h"
 
 
 UCLASS(Blueprintable, BlueprintType)
-class PROJECTR_API UPRInteractComponent : public UActorComponent
+class PROJECTR_API UPRInteractComponent : public UPRBaseComponent
 {
 	GENERATED_BODY()
 
@@ -22,9 +23,6 @@ public:
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	UFUNCTION(BlueprintCallable, Category = "Interact")
-	void OnPlayerControllerInitialized(APlayerController* PlayerController);
 	
 protected:
 	// Called when the game starts
@@ -40,8 +38,4 @@ private:
 
 	// Character camera reference
 	TObjectPtr<APlayerCameraManager> OwnerCam = nullptr;
-
-	// HUD reference
-	TObjectPtr<UPRWidgetBase> HUD = nullptr;
-
 };
