@@ -87,6 +87,7 @@ void UPRStatusComponent::DecreaseStamina()
 		if (Stamina <= 0.0f) 
 		{
 			TimerManager.ClearTimer(DecreaseHandle);
+			OnStaminaExhausted.ExecuteIfBound(EPRGait::Running);
 		}
 		UpdateStamina(DecrementOfStamina);
 	}), DecrementalCycleOfStamina, true);

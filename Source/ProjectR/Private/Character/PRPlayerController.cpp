@@ -39,6 +39,7 @@ void APRPlayerController::Init()
 	{
 		PRStatusComponent = StatusComponent;
 		OnPlayerControllerInitialized.AddUObject(PRStatusComponent, &UPRStatusComponent::OnControllerInitialized);
+		StatusComponent->OnStaminaExhausted.BindUObject(PossessedCharacter, &APRBaseCharacter::SetDesiredGait);
 	}
 
 	if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))

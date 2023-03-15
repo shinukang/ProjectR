@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "PRBaseComponent.h"
 #include "Components/ActorComponent.h"
+#include "Library/PRCharacterEnumLibrary.h"
 #include "PRStatusComponent.generated.h"
 
+DECLARE_DELEGATE_OneParam(FOnStaminaExhausted, EPRGait);
 
 UCLASS(BlueprintType, Blueprintable)
 class PROJECTR_API UPRStatusComponent : public UPRBaseComponent
@@ -50,7 +52,10 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	
+
+public:
+	FOnStaminaExhausted OnStaminaExhausted;
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Setting|Stamina")
 	float IncrementOfStamina = 0.0f;
