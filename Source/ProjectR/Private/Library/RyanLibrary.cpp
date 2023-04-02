@@ -5,6 +5,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "InputMappingContext.h"
+#include "Engine/DataTable.h"
+#include "Library/PRItemStructLibrary.h"
 
 void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerController, UInputMappingContext* InputMappingContext, bool bNeedToClearMappings)
 {
@@ -58,3 +60,21 @@ void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerControl
 	}
 }
 
+UDataTable* URyanLibrary::GetDataTable(EPRItemType Type)
+{
+	switch(Type)
+	{
+	case EPRItemType::Default:
+		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, ItemTablePath));
+
+	case EPRItemType::Firearm:
+		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, FirearmTablePath));
+
+	case EPRItemType::Ammunition:
+		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, AmmunitionTablePath));
+
+	case EPRItemType::Medicine:
+		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, MedicineTablePath));
+	}
+	return nullptr;
+}

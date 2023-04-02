@@ -3,15 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Object/PRBaseObject.h"
+#include "Object/PRItem.h"
 #include "PRWeapon.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTR_API APRWeapon : public APRBaseObject
+class PROJECTR_API APRWeapon : public APRItem
 {
 	GENERATED_BODY()
-	
+
+public:
+	APRWeapon();
 };

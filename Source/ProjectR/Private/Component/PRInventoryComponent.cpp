@@ -2,7 +2,7 @@
 
 
 #include "Component/PRInventoryComponent.h"
-#include "Library/PRObjectStructLibrary.h"
+#include "Library/PRItemStructLibrary.h"
 #include "Component/PRInteractComponent.h"
 #include "Library/RyanLibrary.h"
 
@@ -20,7 +20,7 @@ UPRInventoryComponent::UPRInventoryComponent()
 void UPRInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Inventory.Init(FPRInventorySlotData(), MaxSize);
+	//Inventory.Init(FPRInventorySlotData(), MaxSize);
 	UpdateInventorySlots();
 }
 
@@ -31,36 +31,40 @@ void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 	// ...
 }
-
-bool UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount)
+bool UPRInventoryComponent::TryAddToInventory(FName ID, int32 Amount)
 {
-	UE_LOG(LogTemp, Warning, TEXT("TryAddToInventory"));
-
-	// 데이터 테이블에 존재하는 ID인지 확인
-	if (const FPRObject* ObjectData = ObjectDataTable->FindRow<FPRObject>(ObjectID, FString()))
+	if (UDataTable* ItemDataTable = URyanLibrary::GetDataTable())
 	{
-		const FPRInventorySlotData SlotData = FPRInventorySlotData(ObjectID, ObjectAmount);
-
-		// 인벤토리 내에 같은 ID를 가진 오브젝트가 존재하면
-		int32 Index = Inventory.Find(SlotData);
-
-		if(Index != INDEX_NONE)
+		if (FPRItemData* ItemData = ItemDataTable->FindRow<FPRItemData>(ID, TEXT("")))
 		{
-			if (ObjectData->bIsStackable)
+			if(CurrentCapacity + ItemData->WeightPerPiece * Amount > MaxCapacity) return false;
+			
+			switch (ItemData->Type)
 			{
-				Inventory[Index].Amount += ObjectAmount;
-				UpdateInventorySlots();
-				return true;
+			case EPRItemType::Default:
+				return false;
+
+			case EPRItemType::Firearm:
+				if (Weapons.Num() < MaxCountOfWeapon)
+				{
+					Weapons.Add(FPRInventorySlotData(ID, 1));
+					return true;
+				}
+				return false;
+			case EPRItemType::Ammunition:
+			case EPRItemType::Medicine:
+				const FPRInventorySlotData ConsumableSlotData = FPRInventorySlotData(ID, Amount);
+				if(const int32 Index = Consumables.Find(ConsumableSlotData) != INDEX_NONE)
+				{
+					Consumables[Index-1].Amount += Amount;
+					return true;
+				}
+				if(Consumables.Num() < MaxCountOfConsumable)
+				{
+					Consumables.Add(ConsumableSlotData);
+					return true;
+				}
 			}
-			return false;
-		}
-		// 존재하지 않으면, 빈 슬롯 중 가장 작은 인덱스를 찾는다.
-		Index = Inventory.Find(FPRInventorySlotData());
-		if (Index != INDEX_NONE)
-		{
-			Inventory[Index] = SlotData;// 오브젝트 추가
-			UpdateInventorySlots();
-			return true;
 		}
 	}
 	return false;
@@ -68,5 +72,5 @@ bool UPRInventoryComponent::TryAddToInventory(FName ObjectID, int32 ObjectAmount
 
 void UPRInventoryComponent::UpdateInventorySlots()
 {
-	HUD->UpdateSlotData(Inventory, MaxSize);
+	//HUD->UpdateSlotData(Inventory, MaxSize);
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Interface/PRWidgetInterface.h"
+#include "Library/PRItemStructLibrary.h"
 #include "PRWidgetBase.generated.h"
 
 /**
@@ -17,7 +18,7 @@ class PROJECTR_API UPRWidgetBase : public UUserWidget
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateInteractInfo(const FName& ObjectID);
+	void UpdateInteractInfo(FPRItemData ObjectData, int32 ObjectAmount);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SetInventoryVisibility(bool bShow);

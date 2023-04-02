@@ -9,6 +9,8 @@
 #include "GameFramework/Character.h"
 #include "Interface/PRInteractInterface.h"
 #include "Interface/PRWidgetInterface.h"
+#include "Kismet/GameplayStatics.h"
+#include "Library/PRItemStructLibrary.h"
 #include "Library/RyanLibrary.h"
 
 // Sets default values for this component's properties
@@ -42,14 +44,25 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if(AActor* NewDetectedObject = CheckInteractiveActor())
+	int32 ItemAmount = -1;
+
+	if(AActor* NewDetectedActor = CheckInteractiveActor())
 	{
-		if(DetectedActor != NewDetectedObject)
+		if(DetectedActor != NewDetectedActor)
 		{
 			// UI update
-			DetectedActor = NewDetectedObject;
-			const FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(DetectedActor);
-			HUD->UpdateInteractInfo(DetectedObjectID);
+			DetectedActor = NewDetectedActor;
+
+			if(const UDataTable* ItemDataTable = URyanLibrary::GetDataTable())
+			{
+				const FName DetectedItemID = IPRInteractInterface::Execute_GetItemID(DetectedActor);
+
+				ItemAmount = IPRInteractInterface::Execute_GetItemAmount(DetectedActor);
+
+				FPRItemData* ItemData = ItemDataTable->FindRow<FPRItemData>(DetectedItemID, TEXT("ItemID[%s] isn't exist in datatable"));
+
+				HUD->UpdateInteractInfo(ItemData, ItemAmount);
+			}
 		}
 	}
 	else
@@ -58,7 +71,7 @@ void UPRInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		if(DetectedActor != nullptr)
 		{
 			DetectedActor = nullptr;
-			HUD->UpdateInteractInfo(FName());
+			HUD->UpdateInteractInfo(FPRItemData(), ItemAmount);
 		}
 	}
 }

@@ -3,3 +3,8 @@
 
 #include "Object/PRWeapon.h"
 
+APRWeapon::APRWeapon()
+{
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>("Body");
+	Collision->SetupAttachment(Mesh, FName(TEXT("CollisionSocket")));
+}

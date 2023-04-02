@@ -189,11 +189,11 @@ void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Va
 {
 	if(PRInteractComponent && PRInventoryComponent && Value.Get<bool>())
 	{
-		if(PRInteractComponent->DetectedActor)
+		if(AActor* DetectedObject = PRInteractComponent->DetectedActor)
 		{
-			const FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(PRInteractComponent->DetectedActor);
-			const int32 DetectedObjectAmount = IPRInteractInterface::Execute_GetObjectAmount(PRInteractComponent->DetectedActor);
-			PRInventoryComponent->TryAddToInventory(DetectedObjectID, DetectedObjectAmount);
+			IPRInteractInterface::Execute_OnInteract(DetectedObject, this);
+			//const FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(DetectedObject);
+			//const int32 DetectedObjectAmount = IPRInteractInterface::Execute_GetObjectAmount(DetectedObject);
 		}
 	}
 }

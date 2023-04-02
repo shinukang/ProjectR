@@ -6,7 +6,7 @@
 #include "InputMappingContext.h"
 #include "PRBaseComponent.h"
 #include "Components/ActorComponent.h"
-#include "Library/PRObjectStructLibrary.h"
+
 #include "Widget/PRWidgetBase.h"
 #include "PRInventoryComponent.generated.h"
 
@@ -22,7 +22,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	bool TryAddToInventory(FName ObjectID, int32 ObjectAmount);
+	bool TryAddToInventory(FName ID, int32 Amount);
 
 	void UpdateInventorySlots();
 
@@ -31,12 +31,24 @@ protected:
 	virtual void BeginPlay() override;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TObjectPtr<UDataTable> ObjectDataTable = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FPRInventorySlotData> Weapons;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TArray<FPRInventorySlotData> Inventory;
+	TArray<FPRInventorySlotData> Consumables;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	int32 MaxSize = 0;
+	int32 MaxCountOfWeapon = 3;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	int32 MaxCountOfConsumable = 8;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float MaxCapacity = 40.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float CurrentCapacity = 0.0f;
+
+private:
+	bool bIsInventoryOpen = false;
 };

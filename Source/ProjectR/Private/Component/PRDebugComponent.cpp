@@ -319,8 +319,7 @@ void UPRDebugComponent::IA_ToggleDebugMesh(const FInputActionValue& Value)
 	}
 	else
 	{
-		//DefaultSkeletalMesh = OwnerCharacter->GetMesh()->GetSkeletalMeshAsset();
-		DefaultSkeletalMesh = OwnerCharacter->GetMesh()->SkeletalMesh;
+		DefaultSkeletalMesh = OwnerCharacter->GetMesh()->GetSkeletalMeshAsset();
 		OwnerCharacter->SetVisibleMesh(DebugSkeletalMesh);
 	}
 	bDebugMeshVisible = !bDebugMeshVisible;

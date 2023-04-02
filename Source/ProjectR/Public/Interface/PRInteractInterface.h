@@ -26,9 +26,11 @@ public:
 	bool CanInteract();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
-	FName GetObjectID();
+	FName GetItemID();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
-	int32 GetObjectAmount();
+	int32 GetItemAmount();
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
+	void OnInteract(APlayerController* PlayerController);
 };
