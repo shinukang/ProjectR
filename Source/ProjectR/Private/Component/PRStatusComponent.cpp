@@ -3,22 +3,30 @@
 
 #include "Component/PRStatusComponent.h"
 
+#include "Net/UnrealNetwork.h"
+
 // Sets default values for this component's properties
 UPRStatusComponent::UPRStatusComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
 	// ...
+
+	
 }
 
+void UPRStatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UPRStatusComponent, HealthPoint);
+}
 
 // Called when the game starts
 void UPRStatusComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	SetIsReplicated(true);
 	// ...
 	
 }
@@ -32,16 +40,46 @@ void UPRStatusComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	// ...
 }
 
+void UPRStatusComponent::OnHealthPointUpdate()
+{
+	if(GetOwner()->GetLocalRole() == ROLE_Authority)
+	{
+		FString HealthMessage = FString::Printf(TEXT("%s now has %f health remaining."), *GetOwner()->GetName(), HealthPoint);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, HealthMessage);
+	}
+
+	if(Cast<APawn>(GetOwner())->IsLocallyControlled())
+	{
+		OnUpdateHealthPoint.Execute(HealthPoint);
+		if (HealthPoint <= 0.0f)
+		{
+			FString DeathMessage = FString::Printf(TEXT("You have been killed."));
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, DeathMessage);
+		}
+	}
+}
+
+void UPRStatusComponent::OnRep_HealthPoint()
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_HealthPoint"));
+	OnHealthPointUpdate();
+}
+
+
 void UPRStatusComponent::SetHealthPoint(float NewValue)
 {
 	HealthPoint = FMath::Clamp(NewValue, 0.0f, 1.0f);
-	HUD->UpdateHealthPointBar(HealthPoint);
+
+	if(GetOwner()->GetLocalRole() == ROLE_Authority)
+	{
+		OnHealthPointUpdate();
+	}
 }
 
 void UPRStatusComponent::SetStamina(float NewValue)
 {
 	Stamina = FMath::Clamp(NewValue, 0.0f, 1.0f);
-	HUD->UpdateStaminaBar(Stamina);
+	OnUpdateStamina.ExecuteIfBound(Stamina);
 }
 
 void UPRStatusComponent::UpdateHealthPoint(float DeltaValue)

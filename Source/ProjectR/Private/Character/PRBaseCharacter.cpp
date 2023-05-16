@@ -307,7 +307,7 @@ void APRBaseCharacter::SetDesiredGait(const EPRGait NewGait)
 {
 	DesiredGait = NewGait;
 
-	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetController()->GetComponentByClass(UPRStatusComponent::StaticClass())))
+	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetComponentByClass(UPRStatusComponent::StaticClass())))
 	{
 		switch (DesiredGait)
 		{
@@ -320,10 +320,6 @@ void APRBaseCharacter::SetDesiredGait(const EPRGait NewGait)
 			StatusComponent->IncreaseStamina();
 			break;
 		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("StatusComponent Null"));
 	}
 
 	if (GetLocalRole() == ROLE_AutonomousProxy)
@@ -1255,7 +1251,7 @@ void APRBaseCharacter::OnCameraRot_Implementation(const FInputActionValue& Value
 	AddControllerPitchInput(LookUpDownRate * Value.Get<FVector2D>().Y);
 }
 
-void APRBaseCharacter::OnShoot_Implementation(const FInputActionValue& Value)
+void APRBaseCharacter::OnShoot(const FInputActionValue& Value)
 {
 	if(Value.Get<bool>())
 	{

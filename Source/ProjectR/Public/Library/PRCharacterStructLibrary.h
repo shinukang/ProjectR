@@ -4,6 +4,7 @@
 #include "Engine/DataTable.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Materials/MaterialInterface.h"
+#include "Components/Image.h"
 #include "Library/PRCharacterEnumLibrary.h"
 
 #include "PRCharacterStructLibrary.generated.h"
@@ -303,4 +304,35 @@ struct FPRHitFX : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, Category = "Niagara")
 	FRotator NiagaraRotationOffset;
+};
+
+USTRUCT(BlueprintType)
+struct FPRCostume : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DisplayName")
+	FText Name = FText::FromString(TEXT("None"));
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Icon")
+	TObjectPtr<UTexture2D> Icon = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Category")
+	EPRCostume Category = EPRCostume::Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TObjectPtr<USkeletalMesh> Mesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TObjectPtr<USkeletalMesh> SubMesh = nullptr;
+
+	bool operator==(const FPRCostume& Other) const
+	{
+		return Equals(Other);
+	}
+
+	bool Equals(const FPRCostume& Other) const
+	{
+		return this->Category == Other.Category;
+	}
 };

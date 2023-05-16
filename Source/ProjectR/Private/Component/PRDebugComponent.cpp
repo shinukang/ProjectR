@@ -86,7 +86,7 @@ void UPRDebugComponent::BeginPlay()
 		SetDynamicMaterials();
 		SetResetColors();
 	}
-	URyanLibrary::SetupInputs(this, Cast<APlayerController>(OwnerCharacter->GetController()), DebugInputMappingContext);
+	//URyanLibrary::SetupInputs(this, Cast<APlayerController>(OwnerCharacter->GetController()), DebugInputMappingContext);
 }
 
 void UPRDebugComponent::DetectDebuggableCharactersInWorld()

@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "System/PRItemObject.h"
 #include "PRWidgetInterface.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnResetDroppableSlot)
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -29,4 +31,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Inventory")
 	UPRWidgetBase* GetHUD();
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Inventory")
+	void UpdateDroppableSlot(UPRItemObject* ItemObject);
+
+	FOnResetDroppableSlot OnResetDroppable;
 };

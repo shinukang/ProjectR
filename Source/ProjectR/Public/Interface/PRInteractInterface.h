@@ -32,5 +32,5 @@ public:
 	int32 GetItemAmount();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
-	void OnInteract(APlayerController* PlayerController);
+	void OnInteract(UPRInventoryComponent* InventoryComponent);
 };

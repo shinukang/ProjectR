@@ -6,14 +6,17 @@
 #include "Character/PRCharacter.h"
 #include "Character/PRPlayerCameraManager.h"
 #include "Component/PRDebugComponent.h"
+#include "Item/PRFirearm.h"
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Library/RyanLibrary.h"
+#include "System/PRLobbyPawn.h"
 
 void APRPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	SetInputModeGameOnly();
 }
 
 void APRPlayerController::Init()
@@ -22,39 +25,43 @@ void APRPlayerController::Init()
 
 	SetupWidget();
 
-	
-	if (UPRInteractComponent* InteractComponent = Cast<UPRInteractComponent>(GetComponentByClass(UPRInteractComponent::StaticClass())))
+	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetPawn()->GetComponentByClass(UPRInventoryComponent::StaticClass())))
 	{
-		PRInteractComponent = InteractComponent;
-		OnPlayerControllerInitialized.AddUObject(PRInteractComponent, &UPRInteractComponent::OnControllerInitialized);
+		OnControllerInitialized.AddUObject(InventoryComponent, &UPRInventoryComponent::OnControllerInitialized);
+
+		InventoryComponent->OnUpdateInteractInfo.BindUObject(HUD, &UPRWidgetBase::UpdateInteractInfo);
+		InventoryComponent->OnUpdateEquipment.AddUObject(HUD, &UPRWidgetBase::UpdateEquipment);
+		InventoryComponent->OnUpdateFirearm.AddUObject(HUD, &UPRWidgetBase::UpdateFirearm);
+		InventoryComponent->OnUpdateGroundItems.AddUObject(HUD, &UPRWidgetBase::UpdateGroundItems);
+		InventoryComponent->OnUpdateInventoryItems.AddUObject(HUD, &UPRWidgetBase::UpdateInventoryItems);
+
+		if (APRLobbyPawn* LobbyPawn = Cast<APRLobbyPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), APRLobbyPawn::StaticClass())))
+		{
+			InventoryComponent->OnUpdateEquipment.AddUObject(LobbyPawn, &APRLobbyPawn::UpdateEquipment);
+		}
 	}
 
-	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
+	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetPawn()->GetComponentByClass(UPRStatusComponent::StaticClass())))
 	{
-		PRInventoryComponent = InventoryComponent;
-		OnPlayerControllerInitialized.AddUObject(PRInventoryComponent, &UPRInventoryComponent::OnControllerInitialized);
-	}
+		OnControllerInitialized.AddUObject(StatusComponent, &UPRStatusComponent::OnControllerInitialized);
 
-	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetComponentByClass(UPRStatusComponent::StaticClass())))
-	{
-		PRStatusComponent = StatusComponent;
-		OnPlayerControllerInitialized.AddUObject(PRStatusComponent, &UPRStatusComponent::OnControllerInitialized);
-		StatusComponent->OnStaminaExhausted.BindUObject(PossessedCharacter, &APRBaseCharacter::SetDesiredGait);
+		StatusComponent->OnUpdateHealthPoint.BindUObject(HUD, &UPRWidgetBase::UpdateHealthPointBar);
+		StatusComponent->OnUpdateStamina.BindUObject(HUD, &UPRWidgetBase::UpdateStaminaBar);
 	}
 
 	if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))
 	{
-		OnPlayerControllerInitialized.AddUObject(DebugComponent, &UPRDebugComponent::OnPlayerControllerInitialized);
+		OnControllerInitialized.AddUObject(DebugComponent, &UPRDebugComponent::OnPlayerControllerInitialized);
 	}
 
-	OnPlayerControllerInitialized.Broadcast(this);
+	OnControllerInitialized.Broadcast(this);
 }
 
 
 void APRPlayerController::OnPossess(APawn* NewPawn)
 {
 	Super::OnPossess(NewPawn);
-	PossessedCharacter = Cast<APRBaseCharacter>(NewPawn);
+	PossessedCharacter = Cast<APRCharacter>(NewPawn);
 	if (!IsRunningDedicatedServer())
 	{
 		// Servers want to setup camera only in listen servers.
@@ -71,7 +78,7 @@ void APRPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
 
-	PossessedCharacter = Cast<APRBaseCharacter>(GetPawn());
+	PossessedCharacter = Cast<APRCharacter>(GetPawn());
 
 	SetupCamera();
 
@@ -187,31 +194,18 @@ void APRPlayerController::IA_LookingDirection_Implementation(const FInputActionV
 
 void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Value)
 {
-	if(PRInteractComponent && PRInventoryComponent && Value.Get<bool>())
-	{
-		if(AActor* DetectedObject = PRInteractComponent->DetectedActor)
-		{
-			IPRInteractInterface::Execute_OnInteract(DetectedObject, this);
-			//const FName DetectedObjectID = IPRInteractInterface::Execute_GetObjectID(DetectedObject);
-			//const int32 DetectedObjectAmount = IPRInteractInterface::Execute_GetObjectAmount(DetectedObject);
-		}
-	}
+	PossessedCharacter->PRInventoryComponent->OnInteractAction();
 }
 
 void APRPlayerController::IA_Inventory_Implementation(const FInputActionValue& Value)
 {
 	const bool InWidget = Value.Get<bool>();
 	HUD->SetInventoryVisibility(InWidget);
+	PossessedCharacter->PRInventoryComponent->bIsInventoryOpen = InWidget;
 }
 
-void APRPlayerController::IA_Cursor_Implementation(const FInputActionValue& Value)
+void APRPlayerController::IA_Equip_Implementation(const FInputActionValue& Value)
 {
-	FVector2D MousePosition, ViewportSize;
-	GetMousePosition(MousePosition.X, MousePosition.Y);
-	GEngine->GameViewport->GetViewportSize(ViewportSize);
-
-	const FVector StartPosition(MousePosition.X, MousePosition.Y, 0.0f);
-	const FVector TargetPosition(ViewportSize.X  / 2.0f, ViewportSize.Y / 2.0f, 0.0f);
-
-	HUD->UpdateSelectedSlot(180.0f - UKismetMathLibrary::FindLookAtRotation(StartPosition, TargetPosition).Yaw);
+	const int32 FirearmIndex = Value.Get<float>() - 1;
+	PossessedCharacter->Server_HoldFirearm(FirearmIndex);
 }

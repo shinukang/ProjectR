@@ -4,8 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "System/PRItemObject.h"
 #include "Interface/PRWidgetInterface.h"
 #include "Library/PRItemStructLibrary.h"
+#include "Library/PRItemEnumLibrary.h"
+#include "Item/PRItem.h"
+#include "Item/PRFirearm.h"
 #include "PRWidgetBase.generated.h"
 
 /**
@@ -18,16 +22,25 @@ class PROJECTR_API UPRWidgetBase : public UUserWidget
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateInteractInfo(FPRItemData ObjectData, int32 ObjectAmount);
+	void UpdateInteractInfo(const FText& DisplayName);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SetInventoryVisibility(bool bShow);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateSelectedSlot(float Angle);
+	void UpdateGroundItems(const TArray<APRItem*>& GroundItems);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateInventoryItems(const TArray<FPRItemData>& InventoryItems);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateSlotData(const TArray<FPRInventorySlotData>& Inventory, int32 InventoryMaxSize);
+	void UpdateInventoryItems(const TArray<FPRItemData>& InventoryItems);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateFirearm(int32 Index, FPRItemData ItemData);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateEquipment(FPRItemData ItemData);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateHealthPointBar(float HealthPoint);

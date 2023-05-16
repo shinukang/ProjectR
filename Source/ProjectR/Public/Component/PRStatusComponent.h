@@ -9,6 +9,8 @@
 #include "PRStatusComponent.generated.h"
 
 DECLARE_DELEGATE_OneParam(FOnStaminaExhausted, EPRGait);
+DECLARE_DELEGATE_OneParam(FOnUpdateStamina, float);
+DECLARE_DELEGATE_OneParam(FOnUpdateHealthPoint, float);
 
 UCLASS(BlueprintType, Blueprintable)
 class PROJECTR_API UPRStatusComponent : public UPRBaseComponent
@@ -18,6 +20,8 @@ class PROJECTR_API UPRStatusComponent : public UPRBaseComponent
 public:	
 	// Sets default values for this component's properties
 	UPRStatusComponent();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -51,10 +55,18 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	void OnHealthPointUpdate();
+
 private:
+	UFUNCTION()
+	void OnRep_HealthPoint();
 
 public:
 	FOnStaminaExhausted OnStaminaExhausted;
+
+	FOnUpdateHealthPoint OnUpdateHealthPoint;
+
+	FOnUpdateStamina OnUpdateStamina;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Setting|Stamina")
@@ -75,6 +87,7 @@ protected:
 
 
 private:
+	UPROPERTY(ReplicatedUsing =OnRep_HealthPoint)
 	float HealthPoint = 1.0f;
 
 	float Stamina = 1.0f;

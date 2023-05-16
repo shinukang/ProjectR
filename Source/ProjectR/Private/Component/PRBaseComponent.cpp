@@ -3,6 +3,7 @@
 
 #include "Component/PRBaseComponent.h"
 
+#include "Character/PRPlayerController.h"
 #include "Interface/PRWidgetInterface.h"
 
 // Sets default values for this component's properties
@@ -32,7 +33,8 @@ void UPRBaseComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 void UPRBaseComponent::OnControllerInitialized(APlayerController* PlayerController)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s OnControllerInitialized"), *this->GetName());
-	HUD = IPRWidgetInterface::Execute_GetHUD(PlayerController);
+
+
 }
 
 

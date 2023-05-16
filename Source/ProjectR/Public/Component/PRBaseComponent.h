@@ -17,7 +17,7 @@ public:
 	// Sets default values for this component's properties
 	UPRBaseComponent();
 
-	void OnControllerInitialized(APlayerController* PlayerController);
+	virtual void OnControllerInitialized(APlayerController* PlayerController);
 
 protected:
 	// Called when the game starts
@@ -27,7 +27,4 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-protected:
-	TObjectPtr<UPRWidgetBase> HUD = nullptr;
-		
 };

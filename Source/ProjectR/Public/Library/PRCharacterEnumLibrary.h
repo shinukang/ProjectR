@@ -164,3 +164,13 @@ enum class EPRSpawnType : uint8
 	Location,
 	Attached
 };
+
+UENUM(BlueprintType)
+enum class EPRCostume : uint8
+{
+	Default,
+	HeadGear,
+	Top,
+	Bottom,
+	Shoes,
+};

@@ -31,7 +31,7 @@ public:
 	APRBaseCharacter(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Movement")
-	FORCEINLINE class UPRCharacterMovementComponent* GetMyMovementComponent() const
+		FORCEINLINE class UPRCharacterMovementComponent* GetMyMovementComponent() const
 	{
 		return MyCharacterMovementComponent;
 	}
@@ -48,306 +48,306 @@ public:
 
 	/** Implement on BP to get required get up animation according to character's state */
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "PR|Ragdoll System")
-	UAnimMontage* GetGetUpAnimation(bool bRagdollFaceUpState);
+		UAnimMontage* GetGetUpAnimation(bool bRagdollFaceUpState);
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Ragdoll System")
-	virtual void RagdollStart();
+		virtual void RagdollStart();
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Ragdoll System")
-	virtual void RagdollEnd();
+		virtual void RagdollEnd();
 
 	UFUNCTION(BlueprintCallable, Server, Unreliable, Category = "PR|Ragdoll System")
-	void Server_SetMeshLocationDuringRagdoll(FVector MeshLocation);
+		void Server_SetMeshLocationDuringRagdoll(FVector MeshLocation);
 
 	/** Character States */
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetMovementState(EPRMovementState NewState, bool bForce = false);
+		void SetMovementState(EPRMovementState NewState, bool bForce = false);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRMovementState GetMovementState() const { return MovementState; }
+		EPRMovementState GetMovementState() const { return MovementState; }
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRMovementState GetPrevMovementState() const { return PrevMovementState; }
+		EPRMovementState GetPrevMovementState() const { return PrevMovementState; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetMovementAction(EPRMovementAction NewAction, bool bForce = false);
+		void SetMovementAction(EPRMovementAction NewAction, bool bForce = false);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRMovementAction GetMovementAction() const { return MovementAction; }
+		EPRMovementAction GetMovementAction() const { return MovementAction; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetStance(EPRStance NewStance, bool bForce = false);
+		void SetStance(EPRStance NewStance, bool bForce = false);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRStance GetStance() const { return Stance; }
+		EPRStance GetStance() const { return Stance; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetOverlayOverrideState(int32 NewState);
+		void SetOverlayOverrideState(int32 NewState);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	int32 GetOverlayOverrideState() const { return OverlayOverrideState; }
+		int32 GetOverlayOverrideState() const { return OverlayOverrideState; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetGait(EPRGait NewGait, bool bForce = false);
+		void SetGait(EPRGait NewGait, bool bForce = false);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRGait GetGait() const { return Gait; }
+		EPRGait GetGait() const { return Gait; }
 
 	UFUNCTION(BlueprintGetter, Category = "PR|CharacterStates")
-	EPRGait GetDesiredGait() const { return DesiredGait; }
+		EPRGait GetDesiredGait() const { return DesiredGait; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetRotationMode(EPRRotationMode NewRotationMode, bool bForce = false);
+		void SetRotationMode(EPRRotationMode NewRotationMode, bool bForce = false);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_SetRotationMode(EPRRotationMode NewRotationMode, bool bForce);
+		void Server_SetRotationMode(EPRRotationMode NewRotationMode, bool bForce);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRRotationMode GetRotationMode() const { return RotationMode; }
+		EPRRotationMode GetRotationMode() const { return RotationMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetViewMode(EPRViewMode NewViewMode, bool bForce = false);
+		void SetViewMode(EPRViewMode NewViewMode, bool bForce = false);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_SetViewMode(EPRViewMode NewViewMode, bool bForce);
+		void Server_SetViewMode(EPRViewMode NewViewMode, bool bForce);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRViewMode GetViewMode() const { return ViewMode; }
+		EPRViewMode GetViewMode() const { return ViewMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetOverlayState(EPROverlayState NewState, bool bForce = false);
+		void SetOverlayState(EPROverlayState NewState, bool bForce = false);
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetGroundedEntryState(EPRGroundedEntryState NewState);
+		void SetGroundedEntryState(EPRGroundedEntryState NewState);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_SetOverlayState(EPROverlayState NewState, bool bForce);
+		void Server_SetOverlayState(EPROverlayState NewState, bool bForce);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPROverlayState GetOverlayState() const { return OverlayState; }
+		EPROverlayState GetOverlayState() const { return OverlayState; }
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
-	EPRGroundedEntryState GetGroundedEntryState() const { return GroundedEntryState; }
+		EPRGroundedEntryState GetGroundedEntryState() const { return GroundedEntryState; }
 
 	/** Landed, Jumped, Rolling, Mantling and Ragdoll*/
 	/** On Landed*/
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void EventOnLanded();
+		void EventOnLanded();
 
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, Category = "PR|Character States")
-	void Multicast_OnLanded();
+		void Multicast_OnLanded();
 
 	/** On Jumped*/
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void EventOnJumped();
+		void EventOnJumped();
 
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, Category = "PR|Character States")
-	void Multicast_OnJumped();
+		void Multicast_OnJumped();
 
 	/** Rolling Montage Play Replication*/
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_PlayMontage(UAnimMontage* Montage, float PlayRate);
+		void Server_PlayMontage(UAnimMontage* Montage, float PlayRate);
 
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, Category = "PR|Character States")
-	void Multicast_PlayMontage(UAnimMontage* Montage, float PlayRate);
+		void Multicast_PlayMontage(UAnimMontage* Montage, float PlayRate);
 
 	/** Ragdolling*/
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void ReplicatedRagdollStart();
+		void ReplicatedRagdollStart();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_RagdollStart();
+		void Server_RagdollStart();
 
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, Category = "PR|Character States")
-	void Multicast_RagdollStart();
+		void Multicast_RagdollStart();
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void ReplicatedRagdollEnd();
+		void ReplicatedRagdollEnd();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_RagdollEnd(FVector CharacterLocation);
+		void Server_RagdollEnd(FVector CharacterLocation);
 
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, Category = "PR|Character States")
-	void Multicast_RagdollEnd(FVector CharacterLocation);
+		void Multicast_RagdollEnd(FVector CharacterLocation);
 
 	/** Input */
 
 	UPROPERTY(BlueprintAssignable, Category = "PR|Input")
-	FJumpPressedSignature JumpPressedDelegate;
+		FJumpPressedSignature JumpPressedDelegate;
 
 	UPROPERTY(BlueprintAssignable, Category = "PR|Input")
-	FOnJumpedSignature OnJumpedDelegate;
+		FOnJumpedSignature OnJumpedDelegate;
 
 	UPROPERTY(BlueprintAssignable, Category = "PR|Input")
-	FRagdollStateChangedSignature RagdollStateChangedDelegate;
+		FRagdollStateChangedSignature RagdollStateChangedDelegate;
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Input")
-	EPRStance GetDesiredStance() const { return DesiredStance; }
+		EPRStance GetDesiredStance() const { return DesiredStance; }
 
 	UFUNCTION(BlueprintSetter, Category = "PR|Input")
-	void SetDesiredStance(EPRStance NewStance);
+		void SetDesiredStance(EPRStance NewStance);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Input")
-	void Server_SetDesiredStance(EPRStance NewStance);
+		void Server_SetDesiredStance(EPRStance NewStance);
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
-	void SetDesiredGait(EPRGait NewGait);
+		void SetDesiredGait(EPRGait NewGait);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_SetDesiredGait(EPRGait NewGait);
+		void Server_SetDesiredGait(EPRGait NewGait);
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Input")
-	EPRRotationMode GetDesiredRotationMode() const { return DesiredRotationMode; }
+		EPRRotationMode GetDesiredRotationMode() const { return DesiredRotationMode; }
 
 	UFUNCTION(BlueprintSetter, Category = "PR|Input")
-	void SetDesiredRotationMode(EPRRotationMode NewRotMode);
+		void SetDesiredRotationMode(EPRRotationMode NewRotMode);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
-	void Server_SetDesiredRotationMode(EPRRotationMode NewRotMode);
+		void Server_SetDesiredRotationMode(EPRRotationMode NewRotMode);
 
 	/** Rotation System */
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Rotation System")
-	void SetActorLocationAndTargetRotation(FVector NewLocation, FRotator NewRotation);
+		void SetActorLocationAndTargetRotation(FVector NewLocation, FRotator NewRotation);
 
 	/** Movement System */
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Movement System")
-	bool HasMovementInput() const { return bHasMovementInput; }
+		bool HasMovementInput() const { return bHasMovementInput; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Movement System")
-	FPRMovementSettings GetTargetMovementSettings() const;
+		FPRMovementSettings GetTargetMovementSettings() const;
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Movement System")
-	EPRGait GetAllowedGait() const;
+		EPRGait GetAllowedGait() const;
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Movement System")
-	EPRGait GetActualGait(EPRGait AllowedGait) const;
+		EPRGait GetActualGait(EPRGait AllowedGait) const;
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Movement System")
-	bool CanSprint() const;
+		bool CanSprint() const;
 
 	/** BP implementable function that called when Breakfall starts */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Movement System")
-	void OnBreakfall();
+		void OnBreakfall();
 	virtual void OnBreakfall_Implementation();
 
 	/** BP implementable function that called when A Montage starts, e.g. during rolling */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Movement System")
-	void Replicated_PlayMontage(UAnimMontage* Montage, float PlayRate);
+		void Replicated_PlayMontage(UAnimMontage* Montage, float PlayRate);
 	virtual void Replicated_PlayMontage_Implementation(UAnimMontage* Montage, float PlayRate);
 
 	/** Implement on BP to get required roll animation according to character's state */
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "PR|Movement System")
-	UAnimMontage* GetRollAnimation();
+		UAnimMontage* GetRollAnimation();
 
 	/** Utility */
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Utility")
-	float GetAnimCurveValue(FName CurveName) const;
+		float GetAnimCurveValue(FName CurveName) const;
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Utility")
-	void SetVisibleMesh(USkeletalMesh* NewSkeletalMesh);
+		void SetVisibleMesh(USkeletalMesh* NewSkeletalMesh);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Utility")
-	void Server_SetVisibleMesh(USkeletalMesh* NewSkeletalMesh);
+		void Server_SetVisibleMesh(USkeletalMesh* NewSkeletalMesh);
 
 	/** Camera System */
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Camera System")
-	bool IsRightShoulder() const { return bRightShoulder; }
+		bool IsRightShoulder() const { return bRightShoulder; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Camera System")
-	void SetRightShoulder(bool bNewRightShoulder);
+		void SetRightShoulder(bool bNewRightShoulder);
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Camera System")
-	virtual ECollisionChannel GetThirdPersonTraceParams(FVector& TraceOrigin, float& TraceRadius);
+		virtual ECollisionChannel GetThirdPersonTraceParams(FVector& TraceOrigin, float& TraceRadius);
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Camera System")
-	virtual FTransform GetThirdPersonPivotTarget();
+		virtual FTransform GetThirdPersonPivotTarget();
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Camera System")
-	virtual FVector GetFirstPersonCameraTarget();
+		virtual FVector GetFirstPersonCameraTarget();
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Camera System")
-	void GetCameraParameters(float& TPFOVOut, float& FPFOVOut, bool& bRightShoulderOut) const;
+		void GetCameraParameters(float& TPFOVOut, float& FPFOVOut, bool& bRightShoulderOut) const;
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Camera System")
-	void SetCameraBehavior(UPRPlayerCameraBehavior* CamBeh) { CameraBehavior = CamBeh; }
+		void SetCameraBehavior(UPRPlayerCameraBehavior* CamBeh) { CameraBehavior = CamBeh; }
 
 	/** Essential Information Getters/Setters */
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Essential Information")
-	FVector GetAcceleration() const { return Acceleration; }
+		FVector GetAcceleration() const { return Acceleration; }
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Essential Information")
-	bool IsMoving() const { return bIsMoving; }
+		bool IsMoving() const { return bIsMoving; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Essential Information")
-	FVector GetMovementInput() const;
+		FVector GetMovementInput() const;
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Essential Information")
-	float GetMovementInputAmount() const { return MovementInputAmount; }
+		float GetMovementInputAmount() const { return MovementInputAmount; }
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Essential Information")
-	float GetSpeed() const { return Speed; }
+		float GetSpeed() const { return Speed; }
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Essential Information")
-	FRotator GetAimingRotation() const { return AimingRotation; }
+		FRotator GetAimingRotation() const { return AimingRotation; }
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Essential Information")
-	float GetAimYawRate() const { return AimYawRate; }
+		float GetAimYawRate() const { return AimYawRate; }
 
 	/** Input */
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnForwardMovement(const FInputActionValue& Value);
+		void OnForwardMovement(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnRightMovement(const FInputActionValue& Value);
+		void OnRightMovement(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnCameraUp(const FInputActionValue& Value);
+		void OnCameraUp(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnCameraRight(const FInputActionValue& Value);
+		void OnCameraRight(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnCameraRot(const FInputActionValue& Value);
+		void OnCameraRot(const FInputActionValue& Value);
+
+	//UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	virtual void OnShoot(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnShoot(const FInputActionValue& Value);
+		void OnJump(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnJump(const FInputActionValue& Value);
+		void OnSprint(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnSprint(const FInputActionValue& Value);
+		void OnAim(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnAim(const FInputActionValue& Value);
+		void OnCameraTap(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnCameraTap(const FInputActionValue& Value);
+		void OnCameraHeld(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnCameraHeld(const FInputActionValue& Value);
+		void OnStance(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnStance(const FInputActionValue& Value);
+		void OnWalk(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnWalk(const FInputActionValue& Value);
+		void OnRagdoll(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnRagdoll(const FInputActionValue& Value);
+		void OnVelocityDirection(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnVelocityDirection(const FInputActionValue& Value);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	void OnLookingDirection(const FInputActionValue& Value);
+		void OnLookingDirection(const FInputActionValue& Value);
 
 protected:
 	/** Ragdoll System */
@@ -408,188 +408,188 @@ protected:
 
 	/** Replication */
 	UFUNCTION(Category = "PR|Replication")
-	void OnRep_RotationMode(EPRRotationMode PrevRotMode);
+		void OnRep_RotationMode(EPRRotationMode PrevRotMode);
 
 	UFUNCTION(Category = "PR|Replication")
-	void OnRep_ViewMode(EPRViewMode PrevViewMode);
+		void OnRep_ViewMode(EPRViewMode PrevViewMode);
 
 	UFUNCTION(Category = "PR|Replication")
-	void OnRep_OverlayState(EPROverlayState PrevOverlayState);
+		void OnRep_OverlayState(EPROverlayState PrevOverlayState);
 
 	UFUNCTION(Category = "PR|Replication")
-	void OnRep_VisibleMesh(const USkeletalMesh* PreviousSkeletalMesh);
+		void OnRep_VisibleMesh(const USkeletalMesh* PreviousSkeletalMesh);
 
 protected:
 	/* Custom movement component*/
 	UPROPERTY()
-	TObjectPtr<UPRCharacterMovementComponent> MyCharacterMovementComponent;
+		TObjectPtr<UPRCharacterMovementComponent> MyCharacterMovementComponent;
 
 	/** Input */
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "PR|Input")
-	EPRRotationMode DesiredRotationMode = EPRRotationMode::LookingDirection;
+		EPRRotationMode DesiredRotationMode = EPRRotationMode::LookingDirection;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "PR|Input")
-	EPRGait DesiredGait = EPRGait::Running;
+		EPRGait DesiredGait = EPRGait::Running;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "PR|Input")
-	EPRStance DesiredStance = EPRStance::Standing;
+		EPRStance DesiredStance = EPRStance::Standing;
 
 	UPROPERTY(EditDefaultsOnly, Category = "PR|Input", BlueprintReadOnly)
-	float LookUpDownRate = 1.25f;
+		float LookUpDownRate = 1.25f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "PR|Input", BlueprintReadOnly)
-	float LookLeftRightRate = 1.25f;
+		float LookLeftRightRate = 1.25f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "PR|Input", BlueprintReadOnly)
-	float RollDoubleTapTimeout = 0.3f;
+		float RollDoubleTapTimeout = 0.3f;
 
 	UPROPERTY(Category = "PR|Input", BlueprintReadOnly)
-	bool bBreakFall = false;
+		bool bBreakFall = false;
 
 	UPROPERTY(Category = "PR|Input", BlueprintReadOnly)
-	bool bSprintHeld = false;
+		bool bSprintHeld = false;
 
 	/** Camera System */
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PR|Camera System")
-	float ThirdPersonFOV = 90.0f;
+		float ThirdPersonFOV = 90.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PR|Camera System")
-	float FirstPersonFOV = 90.0f;
+		float FirstPersonFOV = 90.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PR|Camera System")
-	bool bRightShoulder = false;
+		bool bRightShoulder = false;
 
 	/** Movement System */
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PR|Movement System")
-	FDataTableRowHandle MovementModel;
+		FDataTableRowHandle MovementModel;
 
 	/** Essential Information */
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	FVector Acceleration = FVector::ZeroVector;
+		FVector Acceleration = FVector::ZeroVector;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	bool bIsMoving = false;
+		bool bIsMoving = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	bool bHasMovementInput = false;
+		bool bHasMovementInput = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	FRotator LastVelocityRotation;
+		FRotator LastVelocityRotation;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	FRotator LastMovementInputRotation;
+		FRotator LastMovementInputRotation;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	float Speed = 0.0f;
+		float Speed = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	float MovementInputAmount = 0.0f;
+		float MovementInputAmount = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	float AimYawRate = 0.0f;
+		float AimYawRate = 0.0f;
 
 	/** Replicated Essential Information*/
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Essential Information")
-	float EasedMaxAcceleration = 0.0f;
+		float EasedMaxAcceleration = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "PR|Essential Information")
-	FVector ReplicatedCurrentAcceleration = FVector::ZeroVector;
+		FVector ReplicatedCurrentAcceleration = FVector::ZeroVector;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "PR|Essential Information")
-	FRotator ReplicatedControlRotation = FRotator::ZeroRotator;
+		FRotator ReplicatedControlRotation = FRotator::ZeroRotator;
 
 	/** Replicated Skeletal Mesh Information*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PR|Skeletal Mesh", ReplicatedUsing = OnRep_VisibleMesh)
-	TObjectPtr<USkeletalMesh> VisibleMesh = nullptr;
+		TObjectPtr<USkeletalMesh> VisibleMesh = nullptr;
 
 	/** State Values */
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PR|State Values", ReplicatedUsing = OnRep_OverlayState)
-	EPROverlayState OverlayState = EPROverlayState::Default;
+		EPROverlayState OverlayState = EPROverlayState::Default;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values")
-	EPRGroundedEntryState GroundedEntryState;
+		EPRGroundedEntryState GroundedEntryState;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values")
-	EPRMovementState MovementState = EPRMovementState::None;
+		EPRMovementState MovementState = EPRMovementState::None;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values")
-	EPRMovementState PrevMovementState = EPRMovementState::None;
+		EPRMovementState PrevMovementState = EPRMovementState::None;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values")
-	EPRMovementAction MovementAction = EPRMovementAction::None;
+		EPRMovementAction MovementAction = EPRMovementAction::None;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values", ReplicatedUsing = OnRep_RotationMode)
-	EPRRotationMode RotationMode = EPRRotationMode::LookingDirection;
+		EPRRotationMode RotationMode = EPRRotationMode::LookingDirection;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values")
-	EPRGait Gait = EPRGait::Walking;
+		EPRGait Gait = EPRGait::Walking;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PR|State Values")
-	EPRStance Stance = EPRStance::Standing;
+		EPRStance Stance = EPRStance::Standing;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PR|State Values", ReplicatedUsing = OnRep_ViewMode)
-	EPRViewMode ViewMode = EPRViewMode::ThirdPerson;
+		EPRViewMode ViewMode = EPRViewMode::ThirdPerson;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values")
-	int32 OverlayOverrideState = 0;
+		int32 OverlayOverrideState = 0;
 
 	/** Movement System */
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Movement System")
-	FPRMovementStateSettings MovementData;
+		FPRMovementStateSettings MovementData;
 
 	/** Rotation System */
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Rotation System")
-	FRotator TargetRotation = FRotator::ZeroRotator;
+		FRotator TargetRotation = FRotator::ZeroRotator;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Rotation System")
-	FRotator InAirRotation = FRotator::ZeroRotator;
+		FRotator InAirRotation = FRotator::ZeroRotator;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Rotation System")
-	float YawOffset = 0.0f;
+		float YawOffset = 0.0f;
 
 	/** Breakfall System */
 
 	/** If player hits to the ground with a specified amount of velocity, switch to breakfall state */
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "PR|Breakfall System")
-	bool bBreakfallOnLand = true;
+		bool bBreakfallOnLand = true;
 
 	/** If player hits to the ground with an amount of velocity greater than specified value, switch to breakfall state */
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "PR|Breakfall System", meta = (EditCondition ="bBreakfallOnLand"))
-	float BreakfallOnLandVelocity = 700.0f;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "PR|Breakfall System", meta = (EditCondition = "bBreakfallOnLand"))
+		float BreakfallOnLandVelocity = 700.0f;
 
 	/** Ragdoll System */
 
 	/** If the skeleton uses a reversed pelvis bone, flip the calculation operator */
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "PR|Ragdoll System")
-	bool bReversedPelvis = false;
+		bool bReversedPelvis = false;
 
 	/** If player hits to the ground with a specified amount of velocity, switch to ragdoll state */
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "PR|Ragdoll System")
-	bool bRagdollOnLand = false;
+		bool bRagdollOnLand = false;
 
 	/** If player hits to the ground with an amount of velocity greater than specified value, switch to ragdoll state */
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "PR|Ragdoll System", meta = (EditCondition ="bRagdollOnLand"))
-	float RagdollOnLandVelocity = 1000.0f;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "PR|Ragdoll System", meta = (EditCondition = "bRagdollOnLand"))
+		float RagdollOnLandVelocity = 1000.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Ragdoll System")
-	bool bRagdollOnGround = false;
+		bool bRagdollOnGround = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Ragdoll System")
-	bool bRagdollFaceUp = false;
+		bool bRagdollFaceUp = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Ragdoll System")
-	FVector LastRagdollVelocity = FVector::ZeroVector;
+		FVector LastRagdollVelocity = FVector::ZeroVector;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "PR|Ragdoll System")
-	FVector TargetRagdollLocation = FVector::ZeroVector;
+		FVector TargetRagdollLocation = FVector::ZeroVector;
 
 	/* Server ragdoll pull force storage*/
 	float ServerRagdollPull = 0.0f;
@@ -606,7 +606,7 @@ protected:
 	float PreviousAimYaw = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|Camera")
-	TObjectPtr<UPRPlayerCameraBehavior> CameraBehavior;
+		TObjectPtr<UPRPlayerCameraBehavior> CameraBehavior;
 
 	/** Last time the 'first' crouch/roll button is pressed */
 	float LastStanceInputTime = 0.0f;

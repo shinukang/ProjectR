@@ -60,21 +60,45 @@ void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerControl
 	}
 }
 
-UDataTable* URyanLibrary::GetDataTable(EPRItemType Type)
+UDataTable* URyanLibrary::GetItemDataTable(EPRMainCategory Type)
 {
 	switch(Type)
 	{
-	case EPRItemType::Default:
+	case EPRMainCategory::Default:
 		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, ItemTablePath));
 
-	case EPRItemType::Firearm:
+	case EPRMainCategory::Firearm:
 		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, FirearmTablePath));
 
-	case EPRItemType::Ammunition:
+	case EPRMainCategory::Ammunition:
 		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, AmmunitionTablePath));
 
-	case EPRItemType::Medicine:
+	case EPRMainCategory::Medicine:
 		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, MedicineTablePath));
+
+	case EPRMainCategory::Attachment:
+		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, AttachmentTablePath));
+
+	case EPRMainCategory::Equipment:
+		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, EquipmentTablePath));
+
 	}
 	return nullptr;
 }
+
+bool URyanLibrary::IsValidItemID(FName ID)
+{
+	if(UDataTable* DataTable = URyanLibrary::GetItemDataTable())
+	{
+		TArray<FName> RowNames = DataTable->GetRowNames();
+
+		if(RowNames.Contains(ID))
+		{
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
+

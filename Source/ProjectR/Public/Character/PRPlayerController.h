@@ -4,17 +4,16 @@
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "Interface/PRInteractInterface.h"
-#include "Widget/PRWidgetBase.h"
-#include "Component/PRInventoryComponent.h"
-#include "Component/PRInteractComponent.h"
 #include "Component/PRStatusComponent.h"
+#include "Component/PRInventoryComponent.h"
+#include "Widget/PRWidgetBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "PRPlayerController.generated.h"
 
-class APRBaseCharacter;
+class APRCharacter;
 class UInputMappingContext;
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerControllerInitialized, APlayerController*)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnControllerInitialized, APlayerController*)
 /**
  * Player controller class
  */
@@ -61,13 +60,6 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_Shoot(const FInputActionValue& Value);
-	/*
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
-	void IA_CameraUp(const FInputActionValue& Value);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
-	void IA_CameraRight(const FInputActionValue& Value);
-	*/
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_Jump(const FInputActionValue& Value);
@@ -106,18 +98,15 @@ protected:
 	void IA_Inventory(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
-	void IA_Cursor(const FInputActionValue& Value);
+	void IA_Equip(const FInputActionValue& Value);
 
 public:
 	/** Main character reference */
 	UPROPERTY(BlueprintReadOnly, Category = "PR")
-	TObjectPtr<APRBaseCharacter> PossessedCharacter = nullptr;
+	TObjectPtr<APRCharacter> PossessedCharacter = nullptr;
 
 	/* HUD reference */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Widget")
-	TObjectPtr<UPRWidgetBase> HUD = nullptr;
-
-	FOnPlayerControllerInitialized OnPlayerControllerInitialized;
+	FOnControllerInitialized OnControllerInitialized;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
@@ -126,10 +115,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputMappingContext> RestrictedInputMappingContext = nullptr;
 
-private:
-	TObjectPtr<UPRInteractComponent> PRInteractComponent = nullptr;
-
-	TObjectPtr<UPRInventoryComponent> PRInventoryComponent = nullptr;
-
-	TObjectPtr<UPRStatusComponent> PRStatusComponent = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TObjectPtr<UPRWidgetBase> HUD = nullptr;
 };
