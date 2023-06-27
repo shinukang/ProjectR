@@ -1,18 +1,65 @@
 #pragma once
-#include "PRItemEnumLibrary.h"
-#include "RyanLibrary.h"
-#include "Components/Image.h"
+
+#include "PRCharacterEnumLibrary.h"
 #include "Engine/DataTable.h"
+#include "PRItemLibrary.generated.h"
 
-#include "PRItemStructLibrary.generated.h"
+/* Enums for Items */
 
+UENUM(BlueprintType)
+enum class EPRCategory : uint8
+{
+	//
+	Default,
+
+	//Firearm
+	Firearm_Primary,
+	Firearm_Secondary,
+
+	//Equipment
+	Equipment_HeadGear,
+	Equipment_Vest,
+	Equipment_Backpack,
+
+	//Attachment
+	Attachment_Grip,
+	Attachment_Barrel,
+	Attachment_Scope,
+
+	// Ammunition
+	Ammunition,
+
+	// Medicine
+	Medicine_HealthPoint,
+	Medicine_Stamina
+};
+
+UENUM()
+enum class EPRFireMode : uint8
+{
+	Auto, // 자동
+	Semi_Auto, // 반자동
+	Burst, // 3점사
+	Bolt_Action // 볼트 액선
+};
+
+UENUM()
+enum class EPRAmmunition : uint8
+{
+	Ammunition_5_56mm,
+	Ammunition_7_62mm,
+	Ammunition_9mm,
+	Ammunition_12Gauge
+};
+
+/* Structures for Items */
 USTRUCT(BlueprintType)
 struct FPRAttachmentSlotSetting
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
-	EPRSubCategory Category = EPRSubCategory::Default;
+	EPRCategory Category = EPRCategory::Default;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	int32 Index = 0;
@@ -27,7 +74,7 @@ struct FPRBaseData : public FTableRowBase
 	FText Name = FText::FromString(TEXT("None"));
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Category")
-	EPRSubCategory Category = EPRSubCategory::Default;
+	EPRCategory Category = EPRCategory::Default;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Icon")
 	TObjectPtr<UTexture2D> Icon_Small = nullptr;
@@ -46,7 +93,7 @@ struct FPRBaseData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<UStaticMesh> Mesh = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	FTransform MeshTransform = FTransform();
 
@@ -55,28 +102,10 @@ struct FPRBaseData : public FTableRowBase
 
 	FPRBaseData()
 	{
-		
+
 	}
 
-	FPRBaseData(FName ID)
-	{
-		if (const UDataTable* MasterDataTable = URyanLibrary::GetItemDataTable())
-		{
-			if (FPRBaseData* StructRef = MasterDataTable->FindRow<FPRBaseData>(ID, TEXT("MasterDataTable")))
-			{
-				this->Name = StructRef->Name;
-				this->Category = StructRef->Category;
-				this->Icon_Small = StructRef->Icon_Small;
-				this->Icon_Large = StructRef->Icon_Large;
-				this->WeightPerPiece = StructRef->WeightPerPiece;
-				this->CollisionHalfHeight = StructRef->CollisionHalfHeight;
-				this->CollisionRadius = StructRef->CollisionRadius;
-				this->Mesh = StructRef->Mesh;
-				this->MeshTransform = StructRef->MeshTransform;
-				this->Description = StructRef->Description;
-			}
-		}
-	}
+	FPRBaseData(FName ID);
 
 	FPRBaseData(FPRBaseData* StructRef)
 	{
@@ -94,13 +123,15 @@ struct FPRBaseData : public FTableRowBase
 
 	bool operator==(const FPRBaseData& Other) const
 	{
-		return Equals(Other);
+
+	return Equals(Other);
 	}
 
 	bool Equals(const FPRBaseData& Other) const
 	{
-		return this->Name.EqualTo(Other.Name);
+	return this->Name.EqualTo(Other.Name);
 	}
+	
 };
 
 FORCEINLINE uint32 GetTypeHash(const FPRBaseData& ObjectData)
@@ -126,6 +157,9 @@ struct FPRFirearmData : public FPRAdvancedData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<UStaticMesh> MagMesh = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TObjectPtr<UStaticMesh> BaseScopeMesh = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Type")
 	TArray<EPRFireMode> FireModes;
 
@@ -133,7 +167,7 @@ struct FPRFirearmData : public FPRAdvancedData
 	float Damage = 0.1f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
-	int32 AmmoPerMag = 10;
+	int32 BulletsPerMag = 10;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float FireRate = 0.1f;
@@ -153,6 +187,12 @@ struct FPRFirearmData : public FPRAdvancedData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	EPROverlayState OverlayState = EPROverlayState::Default;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
+	FName AmmunitionID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
+	bool bNeedBaseScope = false;
+
 	FPRFirearmData()
 	{
 
@@ -162,16 +202,18 @@ struct FPRFirearmData : public FPRAdvancedData
 	{
 		this->BodyMesh = StructRef->BodyMesh;
 		this->MagMesh = StructRef->MagMesh;
+		this->BaseScopeMesh = StructRef->BaseScopeMesh;
 		this->FireModes = StructRef->FireModes;
 		this->Damage = StructRef->Damage;
-		this->AmmoPerMag = StructRef->AmmoPerMag;
+		this->BulletsPerMag = StructRef->BulletsPerMag;
 		this->FireRate = StructRef->FireRate;
 		this->RecoilRate = StructRef->RecoilRate;
 		this->AttachmentSlotSettings = StructRef->AttachmentSlotSettings;
 		this->HolsterOffset = StructRef->HolsterOffset;
 		this->OverlayState = StructRef->OverlayState;
+		this->AmmunitionID = StructRef->AmmunitionID;
+		this->bNeedBaseScope = StructRef->bNeedBaseScope;
 	}
-	
 };
 
 USTRUCT(BlueprintType)
@@ -184,13 +226,25 @@ struct FPRAttachmentData : public FPRAdvancedData
 
 	FPRAttachmentData()
 	{
-		
+
 	}
 
 	FPRAttachmentData(const FPRAttachmentData* StructRef)
 	{
 		this->BodyMesh = StructRef->BodyMesh;
 	}
+};
+
+USTRUCT(BlueprintType)
+struct FPRScopeData : public FPRAdvancedData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FOV = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bNeedRenderTarget = false;
 };
 
 USTRUCT(BlueprintType)
@@ -211,7 +265,7 @@ struct FPRAmmunitionData : public FPRAdvancedData
 	TObjectPtr<UStaticMesh> BodyMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spec")
-	EPRBulletType BulletType = EPRBulletType::Bullet_5_56mm;
+	EPRAmmunition Ammunition = EPRAmmunition::Ammunition_5_56mm;
 };
 
 USTRUCT(BlueprintType)
@@ -223,10 +277,7 @@ struct FPRMedicineData : public FPRAdvancedData
 	TObjectPtr<UStaticMesh> BodyMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spec")
-	float RecoveryAmount = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spec")
-	float RecoveryTime = 0.0f;
+	float Efficiency = 0.0f;
 };
 
 USTRUCT(BlueprintType)
@@ -234,103 +285,36 @@ struct FPRItemData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Info")
 	FName ID = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Info")
 	int32 Amount = 1;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
-	EPRMainCategory MainCategory = EPRMainCategory::Default;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Info")
+	EPRCategory Category = EPRCategory::Default;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
-	EPRSubCategory SubCategory = EPRSubCategory::Default;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Info")
+	int32 Index = INDEX_NONE;
 
 	FPRItemData()
 	{
-		
+
 	}
 
-	FPRItemData(FName NewID, int32 NewAmount = 1)
+	FPRItemData(FName NewID, int32 NewAmount = 1);
+
+	FPRItemData(EPRCategory NewCategory)
 	{
-		ID = NewID;
-		Amount = NewAmount;
-
-		SubCategory = GetBaseData()->Category;
-
-		switch (SubCategory)
-		{
-		case EPRSubCategory::Attachment_Barrel:
-		case EPRSubCategory::Attachment_Grip:
-		case EPRSubCategory::Attachment_Scope:
-			MainCategory = EPRMainCategory::Attachment;
-			break;
-
-		case EPRSubCategory::Equipment_Backpack:
-		case EPRSubCategory::Equipment_HeadGear:
-		case EPRSubCategory::Equipment_Vest:
-			MainCategory = EPRMainCategory::Equipment;
-			break;
-
-		case EPRSubCategory::Firearm_Primary:
-		case EPRSubCategory::Firearm_Secondary:
-			MainCategory = EPRMainCategory::Firearm;
-			break;
-
-		case EPRSubCategory::Ammunition_Default:
-			MainCategory = EPRMainCategory::Ammunition;
-			break;
-
-		case EPRSubCategory::Medicine_Default:
-			MainCategory = EPRMainCategory::Medicine;
-			break;
-
-		case EPRSubCategory::Default:
-			MainCategory = EPRMainCategory::Default;
-			break;
-		}
-	}
-	FPRBaseData* GetBaseData()
-	{
-		if(ID == NAME_None)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ID is NAME_None"));
-			return nullptr;
-		}
-
-		if(const UDataTable* DataTable = URyanLibrary::GetItemDataTable())
-		{
-			return DataTable->FindRow<FPRBaseData>(ID, TEXT(""));
-		}
-		UE_LOG(LogTemp, Warning, TEXT("DataTable is invalid"));
-		return nullptr;
+		Category = NewCategory;
 	}
 
-	template<class T>
-	T* GetAdvancedData()
+	FPRItemData(FPRItemData* StructRef)
 	{
-		if (ID == NAME_None)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ID is NAME_None"));
-			return nullptr;
-		}
-		if (MainCategory == EPRMainCategory::Default)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Category is invalid"));
-			return nullptr;
-		}
-		if (!T::StaticStruct()->IsChildOf(FPRAdvancedData::StaticStruct()))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Template is not child of FPRAdvancedData"));
-			return nullptr;
-		}
-
-		if (const UDataTable* DataTable = URyanLibrary::GetItemDataTable(MainCategory))
-		{
-			return DataTable->FindRow<T>(ID, TEXT(""));
-		}
-		UE_LOG(LogTemp, Warning, TEXT("DataTable is invalid"));
-		return nullptr;
+		this->ID = StructRef->ID;
+		this->Amount = StructRef->Amount;
+		this->Category = StructRef->Category;
+		this->Index = StructRef->Index;
 	}
 
 	bool operator==(const FPRItemData& Other) const
@@ -342,10 +326,70 @@ struct FPRItemData
 	{
 		return this->ID == Other.ID;
 	}
+};
 
-	bool IsValid() const
+
+/* Item Manage Class */
+
+struct FPRBaseData;
+
+UCLASS(Blueprintable, BlueprintType)
+class PROJECTR_API UPRItemLibrary : public UBlueprintFunctionLibrary
+{
+	GENERATED_BODY()
+
+public:
+	static UDataTable* GetItemDataTable(EPRCategory Category);
+
+	UFUNCTION(BlueprintCallable)
+	static FPRBaseData GetBaseData(FName ID);
+
+	template<class T>
+	static T* GetAdvancedData(FName ID)
 	{
-		return URyanLibrary::IsValidItemID(this->ID);
+		if (IsValidItemID(ID))
+		{
+			if (const UDataTable* DataTable = GetItemDataTable(GetBaseData(ID).Category))
+			{
+				const FString ContextStr = FString::Printf(TEXT("ID[%s] is Invalid"), *ID.ToString());
+				return DataTable->FindRow<T>(ID, ContextStr);
+			}
+			return nullptr;
+		}
+		return nullptr;
 	}
+
+	template<class T>
+	static T* GetAdvancedData(FName ID, EPRCategory Category)
+	{
+		if (IsValidItemID(ID))
+		{
+			if (const UDataTable* DataTable = GetItemDataTable(Category))
+			{
+				const FString ContextStr = FString::Printf(TEXT("ID[%s] is Invalid"), *ID.ToString());
+				return DataTable->FindRow<T>(ID, ContextStr);
+			}
+			return nullptr;
+		}
+		return nullptr;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	static bool IsValidItemID(FName ID);
+
+private:
+	const static inline TCHAR* ItemTablePath = TEXT("DataTable'/Game/Data/DT_Item.DT_Item'");
+
+	const static inline TCHAR* FirearmTablePath = TEXT("DataTable'/Game/Data/DT_Firearm.DT_Firearm'");
+
+	const static inline TCHAR* AmmunitionTablePath = TEXT("DataTable'/Game/Data/DT_Ammunition.DT_Ammunition'");
+
+	const static inline TCHAR* MedicineTablePath = TEXT("DataTable'/Game/Data/DT_Medicine.DT_Medicine'");
+
+	const static inline TCHAR* AttachmentTablePath = TEXT("DataTable'/Game/Data/DT_Attachment.DT_Attachment'");
+
+	const static inline TCHAR* EquipmentTablePath = TEXT("DataTable'/Game/Data/DT_Equipment.DT_Equipment'");
+
+	const static inline TCHAR* ScopeTablePath = TEXT("DataTable'/Game/Data/DT_Scope.DT_Scope'");
 };
 

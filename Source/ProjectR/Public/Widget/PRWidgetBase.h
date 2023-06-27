@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "System/PRItemObject.h"
 #include "Interface/PRWidgetInterface.h"
-#include "Library/PRItemStructLibrary.h"
-#include "Library/PRItemEnumLibrary.h"
+#include "Library/PRItemLibrary.h"
 #include "Item/PRItem.h"
 #include "Item/PRFirearm.h"
 #include "PRWidgetBase.generated.h"
@@ -30,21 +28,30 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateGroundItems(const TArray<APRItem*>& GroundItems);
 
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateInventoryItems(const TArray<FPRItemData>& InventoryItems);
-
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateInventoryItems(const TArray<FPRItemData>& InventoryItems);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateFirearm(int32 Index, FPRItemData ItemData);
+	void UpdateFirearms(const TArray<APRFirearm*>& Firearms);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateEquipment(FPRItemData ItemData);
+	void UpdateEquipment(EPRCategory SubCategory, FName ID);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateHealthPointBar(float HealthPoint);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateStaminaBar(float Stamina);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateShowingBullet(FName ID);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateAttachment(int32 Index, EPRCategory SubCategory, FName ID);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetLiveCharacterMaterial(UMaterialInterface* NewLiveCharacterMaterial);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	UMaterialInterface* GetLiveCharacterMaterial();
 };

@@ -38,6 +38,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateStamina(float DeltaValue);
 
+	UFUNCTION(Server, Reliable)
+	void Server_UseMedicine(FPRItemData ItemData);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetStaminaBuffTimer(float Efficiency);
+
+	void IncreaseHealthPoint(float Amount);
+
 	void IncreaseStamina();
 
 	void DecreaseStamina();
@@ -92,7 +100,13 @@ private:
 
 	float Stamina = 1.0f;
 
-	FTimerHandle IncreaseHandle;
+	FTimerHandle IncreaseStaminaHandle;
 
-	FTimerHandle DecreaseHandle;
+	FTimerHandle DecreaseStaminaHandle;
+
+	FTimerHandle IncreaseHealthPointHandle;
+
+	FTimerHandle TimerHandle;
+
+	int32 RepeatCount = 0;
 };

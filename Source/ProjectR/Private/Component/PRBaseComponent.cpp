@@ -32,9 +32,7 @@ void UPRBaseComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UPRBaseComponent::OnControllerInitialized(APlayerController* PlayerController)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s OnControllerInitialized"), *this->GetName());
-
-
+	//UE_LOG(LogTemp, Warning, TEXT("%s OnControllerInitialized"), *this->GetName());
 }
 
 

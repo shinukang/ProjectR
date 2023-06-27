@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
+#include "Item/PRItemDataObject.h"
 #include "PRLobbyPawn.generated.h"
 
 UCLASS()
@@ -22,12 +23,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UFUNCTION(BlueprintCallable)
-	void UpdateCostume();
+	UFUNCTION(BlueprintCallable, Client, Reliable)
+	void Client_UpdateCostume(const TArray<FPRCostume>& Costumes);
 
-	UFUNCTION(BlueprintCallable)
-	void UpdateEquipment(FPRItemData ItemData);
+	void UpdateEquipment(EPRCategory Category, FName ID);
 
+	void InitLiveCharacter(UPRWidgetBase* HUD);
 
 protected:
 	// Called when the game starts or when spawned

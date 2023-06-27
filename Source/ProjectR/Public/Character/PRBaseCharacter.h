@@ -316,17 +316,11 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
 		void OnCameraRot(const FInputActionValue& Value);
 
-	//UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-	virtual void OnShoot(const FInputActionValue& Value);
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
 		void OnJump(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
 		void OnSprint(const FInputActionValue& Value);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
-		void OnAim(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
 		void OnCameraTap(const FInputActionValue& Value);

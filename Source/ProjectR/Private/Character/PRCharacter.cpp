@@ -1,13 +1,15 @@
 #include "Character/PRCharacter.h"
 
+#include "Character/PRPlayerController.h"
 #include "Engine/StaticMesh.h"
 #include "Kismet/GameplayStatics.h"
-#include "Library/PRItemEnumLibrary.h"
-#include "Library/PRItemStructLibrary.h"
+#include "Library/PRItemLibrary.h"
 #include "Library/RyanLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "System/PRGameInstance.h"
+#include "System/PRLiveCharacterSpawnPoint.h"
 #include "System/PRLobbyPawn.h"
+#include "System/PRPlayerState.h"
 
 APRCharacter::APRCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -39,7 +41,7 @@ APRCharacter::APRCharacter(const FObjectInitializer& ObjectInitializer)
 
 	Equipments = CreateDefaultSubobject<USceneComponent>(TEXT("Equipments"));
 	Equipments->SetupAttachment(GetMesh());
-	
+
 	HeadGear = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HeadGear"));
 	HeadGear->SetupAttachment(Equipments);
 	HeadGear->SetLeaderPoseComponent(GetMesh());
@@ -59,93 +61,117 @@ void APRCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(APRCharacter, CurrentHeldFirearm);
 }
 
-void APRCharacter::UpdateCostume()
+void APRCharacter::Multicast_UpdateCostume_Implementation(const TArray<FPRCostume>& Costumes)
 {
-	if (UPRGameInstance* GameInstance = Cast<UPRGameInstance>(GetGameInstance()))
+	UE_LOG(LogClass, Warning, TEXT("APRCharacter::Multicast_UpdateCostume"));
+
+	for (FPRCostume Costume : Costumes)
 	{
-		TArray<FPRCostume> Costumes = GameInstance->GetCharacterCostume();
+		UE_LOG(LogTemp, Warning, TEXT("Costume = %s, Category = %d"), *Costume.Name.ToString(), Costume.Category);
 
-		for (FPRCostume Costume : Costumes)
+		switch (Costume.Category)
 		{
-			switch (Costume.Category)
-			{
-			case EPRCostume::HeadGear:
-				HeadGear->SetSkeletalMeshAsset(Costume.Mesh);
-				break;
+		case EPRCostume::Default:
+			break;
+		case EPRCostume::HeadGear:
+			HeadGear->SetSkeletalMeshAsset(Costume.Mesh);
+			break;
+		case EPRCostume::Top:
+			Top->SetSkeletalMeshAsset(Costume.Mesh);
+			Arm->SetSkeletalMeshAsset(Costume.SubMesh);
+			break;
+		case EPRCostume::Bottom:
+			Bottom->SetSkeletalMeshAsset(Costume.Mesh);
+			break;
+		case EPRCostume::Shoes:
+			Shoes->SetSkeletalMeshAsset(Costume.Mesh);
+			break;
+		}
+	}
+	Client_UpdateLiveCharacter(Costumes);
+}
 
-			case EPRCostume::Top:
-				Top->SetSkeletalMeshAsset(Costume.Mesh);
-				Arm->SetSkeletalMeshAsset(Costume.SubMesh);
-				break;
-
-			case EPRCostume::Bottom:
-				Bottom->SetSkeletalMeshAsset(Costume.Mesh);
-				break;
-
-			case EPRCostume::Shoes:
-				Shoes->SetSkeletalMeshAsset(Costume.Mesh);
-				break;
-
-			case EPRCostume::Default:
-				break;
-			}
+void APRCharacter::Client_UpdateLiveCharacter_Implementation(const TArray<FPRCostume>& Costumes)
+{
+	if(GetOwner())
+	{
+		if (APRLobbyPawn* LiveCharacter = Cast<APRPlayerController>(GetOwner())->LiveCharacter)
+		{
+			LiveCharacter->Client_UpdateCostume(Costumes);
+		}
+		else
+		{
+			UE_LOG(LogClass, Warning, TEXT("APRCharacter::Client_UpdateLiveCharacter : LiveCharacter is invalid."));
 		}
 	}
 }
 
-void APRCharacter::UpdateEquipment(FPRItemData ItemData)
+void APRCharacter::Server_UpdateEquipment_Implementation(EPRCategory Category, FName ID, APRItem* NewEquipmentItem)
 {
-	UE_LOG(LogTemp, Warning, TEXT("APRCharacter::UpdateEquipment"))
-	const FPREquipmentData* EquipmentData = ItemData.GetAdvancedData<FPREquipmentData>();
+	UE_LOG(LogTemp, Warning, TEXT("APRCharacter::Server_UpdateEquipment"));
 
-	switch (ItemData.SubCategory)
+	if(const FName* CurrentEquipmentID = PRInventoryComponent->Equipments.Find(Category))
 	{
-	case EPRSubCategory::Equipment_HeadGear:
-		HeadGear->SetSkeletalMeshAsset(EquipmentData->BodyMesh);
+		FVector SpawnLocation = PRInventoryComponent->GetSpawnLocation();
+		FRotator SpawnRotation = GetActorRotation() + FRotator(0.0f, - 90.f, 0.0f);
+
+		if(APRItem* NewItem = GetWorld()->SpawnActor<APRItem>(SpawnLocation, SpawnRotation))
+		{
+			NewItem->Init(FPRItemData(*CurrentEquipmentID));
+		}
+	}
+	if(NewEquipmentItem)
+	{
+		NewEquipmentItem->Destroy();
+	}
+	PRInventoryComponent->Equipments.Add(Category, ID);
+	Multicast_UpdateEquipment(Category, ID);
+}
+
+void APRCharacter::Multicast_UpdateEquipment_Implementation(EPRCategory Category, FName ID)
+{
+	UE_LOG(LogTemp, Warning, TEXT("APRCharacter::Multicast_UpdateEquipment"));
+
+	USkeletalMesh* EquipmentMesh = nullptr;
+
+	if(FPREquipmentData* EquipmentData = UPRItemLibrary::GetAdvancedData<FPREquipmentData>(ID))
+	{
+		EquipmentMesh = EquipmentData->BodyMesh;
+	}
+
+	switch (Category)
+	{
+	case EPRCategory::Equipment_HeadGear:
+		HeadGear->SetSkeletalMeshAsset(EquipmentMesh);
 		break;
 
-	case EPRSubCategory::Equipment_Vest:
-		Vest->SetSkeletalMeshAsset(EquipmentData->BodyMesh);
+	case EPRCategory::Equipment_Vest:
+		Vest->SetSkeletalMeshAsset(EquipmentMesh);
 		break;
 
-	case EPRSubCategory::Equipment_Backpack:
-		Backpack->SetSkeletalMeshAsset(EquipmentData->BodyMesh);
+	case EPRCategory::Equipment_Backpack:
+		Backpack->SetSkeletalMeshAsset(EquipmentMesh);
 		break;
 
 	default:
+		UE_LOG(LogTemp, Warning, TEXT("APRCharacter::Multicast_UpdateEquipment : Category is invalid."))
 		break;
 	}
+	PRInventoryComponent->OnUpdateEquipment.Broadcast(Category, ID);
 }
 
-void APRCharacter::Server_UpdateEquipment_Implementation(FPRItemData ItemData)
+void APRCharacter::Server_UpdateFirearm_Implementation(int32 Index, FPRItemData FirearmItemData)
 {
-	UE_LOG(LogTemp, Warning, TEXT("APRCharacter::Server_UpdateEquipment"));
-	UpdateEquipment(ItemData);
-	Multicast_UpdateEquipment(ItemData);
-}
-
-void APRCharacter::Multicast_UpdateEquipment_Implementation(FPRItemData ItemData)
-{
-	UE_LOG(LogTemp, Warning, TEXT("APRCharacter::Client_UpdateEquipment"))
-	UpdateEquipment(ItemData);
-}
-
-void APRCharacter::Server_UpdateFirearm_Implementation(int32 Index, FPRItemData ItemData)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Server_UpdateFirearm"));
-
-	if(HasAuthority())
+	if (APRFirearm* Firearm = GetWorld()->SpawnActor<APRFirearm>())
 	{
-		if (APRFirearm* Firearm = GetWorld()->SpawnActor<APRFirearm>())
-		{
-			Firearm->Init(ItemData);
-			Firearm->SetOwner(GetOwner());
-			Firearm->Index = Index;
-			const FString SocketString = FString::Printf(TEXT("Firearm_Socket_0%d"), Index + 1);
-			const FName SocketName = FName(*SocketString);
-			Firearm->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-			UE_LOG(LogTemp, Warning, TEXT("Owner = %s"), *GetOwner()->GetName());
-		}
+		FirearmItemData.Index = Index;
+		Firearm->Init(FirearmItemData);
+		Firearm->SetOwner(GetOwner());
+		
+		const FString SocketString = FString::Printf(TEXT("Firearm_Socket_0%d"), Index + 1);
+		const FName SocketName = FName(*SocketString);
+		Firearm->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
+		PRInventoryComponent->Firearms[Index] = Firearm;
 	}
 }
 
@@ -238,13 +264,10 @@ void APRCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	UpdateHeldObject();
-	UpdateCostume();
 
 	if(UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
 	{
 		PRInventoryComponent = InventoryComponent;
-		InventoryComponent->OnUpdateFirearm.AddUObject(this, &APRCharacter::Server_UpdateFirearm);
-		InventoryComponent->OnUpdateEquipment.AddUObject(this, &APRCharacter::Server_UpdateEquipment);
 	}
 
 	if(UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetComponentByClass(UPRStatusComponent::StaticClass())))
@@ -256,20 +279,30 @@ void APRCharacter::BeginPlay()
 
 void APRCharacter::Server_HoldFirearm_Implementation(int32 Index)
 {
-	TArray<AActor*> AttachedActors;
-	GetAttachedActors(AttachedActors);
-
-	for(AActor* AttachedActor : AttachedActors)
+	if(!PRInventoryComponent->Firearms[Index])
 	{
-		if(APRFirearm* Firearm = Cast<APRFirearm>(AttachedActor))
+		return;
+	}
+
+	if(CurrentHeldFirearm)
+	{
+		if (CurrentHeldFirearm == PRInventoryComponent->Firearms[Index])
+			return;
+	}
+
+	CurrentHeldFirearm = nullptr;
+
+	for(int32 i = 0; i < 3; i++)
+	{
+		if(PRInventoryComponent->Firearms[i])
 		{
-			if(Firearm->Index == Index)
+			if (i == Index)
 			{
-				AttachToHand(Firearm);
+				AttachToHand(PRInventoryComponent->Firearms[i]);
 			}
 			else
 			{
-				AttachToBack(Firearm);
+				AttachToBack(PRInventoryComponent->Firearms[i]);
 			}
 		}
 	}
@@ -283,17 +316,27 @@ void APRCharacter::AttachToHand(APRFirearm* Firearm)
 
 void APRCharacter::AttachToBack(APRFirearm* Firearm)
 {
-	const FString SocketString = FString::Printf(TEXT("Firearm_Socket_0%d"), Firearm->Index + 1);
+	const FString SocketString = FString::Printf(TEXT("Firearm_Socket_0%d"), Firearm->ItemData.Index + 1);
 	const FName SocketName = FName(*SocketString);
 	Firearm->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
 }
 
 void APRCharacter::OnRep_CurrentHeldFirearm()
 {
-	SetOverlayState(CurrentHeldFirearm->ItemData.GetAdvancedData<FPRFirearmData>()->OverlayState);
+	if(CurrentHeldFirearm)
+	{
+		FPRFirearmData FirearmData = CurrentHeldFirearm->FirearmData;
+		SetOverlayState(FirearmData.OverlayState);
+		OnUpdateBullet.Broadcast(FirearmData.AmmunitionID);
+	}
+	else
+	{
+		SetOverlayState(EPROverlayState::Default);
+		OnUpdateBullet.Broadcast(NAME_None);
+	}
 }
 
-void APRCharacter::OnShoot(const FInputActionValue& Value)
+void APRCharacter::OnShoot_Implementation(const FInputActionValue& Value)
 {
 	if(CurrentHeldFirearm)
 	{
@@ -308,10 +351,80 @@ void APRCharacter::OnShoot(const FInputActionValue& Value)
 	}
 }
 
+void APRCharacter::OnReload_Implementation(const FInputActionValue& Value)
+{
+	if(CurrentHeldFirearm && Value.Get<bool>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("APRCharacter::OnReload"));
+		CurrentHeldFirearm->Reload();
+	}
+}
+
 float APRCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float DamageApplied = PRStatusComponent->GetHealthPoint() - DamageAmount;
 	PRStatusComponent->UpdateHealthPoint(-DamageAmount);
-	//PRStatusComponent->SetHealthPoint(DamageApplied);
 	return DamageApplied;
+}
+
+void APRCharacter::OnAim_Implementation(const FInputActionValue& Value)
+{
+	if(!bIsOnADS)
+	{
+		if (Value.Get<bool>())
+		{
+			// AimAction: Hold "AimAction" to enter the aiming mode, release to revert back the desired rotation mode.
+			SetRotationMode(EPRRotationMode::Aiming);
+		}
+		else
+		{
+			if (ViewMode == EPRViewMode::ThirdPerson)
+			{
+				SetRotationMode(DesiredRotationMode);
+			}
+			else if (ViewMode == EPRViewMode::FirstPerson)
+			{
+				SetRotationMode(EPRRotationMode::LookingDirection);
+			}
+		}
+	}
+}
+
+void APRCharacter::OnADS_Implementation(const FInputActionValue& Value)
+{
+	if(CurrentHeldFirearm)
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(GetOwner()))
+		{
+			if (bIsOnADS)
+			{
+				bIsOnADS = false;
+				PlayerController->SetViewTargetWithBlend(this, 0.05f);
+				SetRotationMode(EPRRotationMode::LookingDirection);
+				LookLeftRightRate = LookUpDownRate = 1.2f;
+			}
+			else
+			{
+				bIsOnADS = true;
+				PlayerController->SetViewTargetWithBlend(CurrentHeldFirearm, 0.05f);
+				SetRotationMode(EPRRotationMode::Aiming);
+				LookLeftRightRate = LookUpDownRate = 0.3f;
+			}
+			GetMesh()->SetVisibility(!bIsOnADS);
+			HeadGear->SetVisibility(!bIsOnADS);
+			CurrentHeldFirearm->bIsOnADS = bIsOnADS;
+		}
+	}
+}
+
+void APRCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	UE_LOG(LogClass, Warning, TEXT("APRCharacter::OnRep_PlayerState"));
+
+	if(APRPlayerState* PRPlayerState = GetPlayerState<APRPlayerState>())
+	{
+		PRPlayerState->LoadCostume();
+	}
 }

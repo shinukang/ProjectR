@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "System/PRItemObject.h"
+#include "Item/PRItemDataObject.h"
 #include "PRWidgetInterface.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnResetDroppableSlot)
@@ -32,7 +32,7 @@ public:
 	UPRWidgetBase* GetHUD();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Inventory")
-	void UpdateDroppableSlot(UPRItemObject* ItemObject);
+	void UpdateDroppableSlot(UPRItemDataObject* ItemDataObject);
 
 	FOnResetDroppableSlot OnResetDroppable;
 };

@@ -5,9 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interface/PRInteractInterface.h"
-#include "Library/PRItemEnumLibrary.h"
 #include "Library/RyanLibrary.h"
-#include "System/PRItemObject.h"
+#include "Item/PRItemDataObject.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -24,39 +23,28 @@ public:
 	// Sets default values for this actor's properties
 	APRItem();
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	bool CanInteract_Implementation() override;
-
-	FName GetItemID_Implementation() override;
-
-	int32 GetItemAmount_Implementation() override;
-
-	void OnInteract_Implementation(UPRInventoryComponent* InventoryComponent) override;
-
-	FName GetID() const { return ID; }
+	//UFUNCTION(BlueprintCallable)
+	//void Init(UPRItemDataObject* NewItemDataObject);
 
 	UFUNCTION(BlueprintCallable)
-	FPRItemData GetItemData(){ return FPRItemData(ID, Amount); }
+	void Init(FPRItemData NewItemData);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UFUNCTION(BlueprintCallable)
-	virtual void Init();
+private:
+	UFUNCTION()
+	void OnRep_ItemData();
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated)
-	TObjectPtr<UPRItemObject> ItemObject = nullptr;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_ItemDataObject)
+	//TObjectPtr<UPRItemDataObject> ItemDataObject = nullptr;
 
-	void DestroyItem();
-
-	UFUNCTION(Server, Reliable)
-	void Server_DestroyItem();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_ItemData)
+	FPRItemData ItemData;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
@@ -68,14 +56,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TObjectPtr<UCapsuleComponent> Collision = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ID = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Amount = 1;
-
 private:
 	bool bIsInteractive = true;
-
-
 };

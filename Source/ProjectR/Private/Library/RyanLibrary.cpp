@@ -6,7 +6,6 @@
 #include "EnhancedInputComponent.h"
 #include "InputMappingContext.h"
 #include "Engine/DataTable.h"
-#include "Library/PRItemStructLibrary.h"
 
 void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerController, UInputMappingContext* InputMappingContext, bool bNeedToClearMappings)
 {
@@ -59,46 +58,3 @@ void URyanLibrary::SetupInputs(UObject* Object, APlayerController* PlayerControl
 		UE_LOG(LogTemp, Warning, TEXT("LocalPlayerSubsystem is null"));
 	}
 }
-
-UDataTable* URyanLibrary::GetItemDataTable(EPRMainCategory Type)
-{
-	switch(Type)
-	{
-	case EPRMainCategory::Default:
-		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, ItemTablePath));
-
-	case EPRMainCategory::Firearm:
-		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, FirearmTablePath));
-
-	case EPRMainCategory::Ammunition:
-		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, AmmunitionTablePath));
-
-	case EPRMainCategory::Medicine:
-		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, MedicineTablePath));
-
-	case EPRMainCategory::Attachment:
-		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, AttachmentTablePath));
-
-	case EPRMainCategory::Equipment:
-		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, EquipmentTablePath));
-
-	}
-	return nullptr;
-}
-
-bool URyanLibrary::IsValidItemID(FName ID)
-{
-	if(UDataTable* DataTable = URyanLibrary::GetItemDataTable())
-	{
-		TArray<FName> RowNames = DataTable->GetRowNames();
-
-		if(RowNames.Contains(ID))
-		{
-			return true;
-		}
-		return false;
-	}
-	return false;
-}
-
-

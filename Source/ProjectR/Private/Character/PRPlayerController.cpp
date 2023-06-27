@@ -6,12 +6,15 @@
 #include "Character/PRCharacter.h"
 #include "Character/PRPlayerCameraManager.h"
 #include "Component/PRDebugComponent.h"
+#include "GameFramework/PlayerState.h"
 #include "Item/PRFirearm.h"
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Library/RyanLibrary.h"
+#include "System/PRLiveCharacterSpawnPoint.h"
 #include "System/PRLobbyPawn.h"
+#include "System/PRPlayerState.h"
 
 void APRPlayerController::BeginPlay()
 {
@@ -21,40 +24,77 @@ void APRPlayerController::BeginPlay()
 
 void APRPlayerController::Init()
 {
-	URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
-
-	SetupWidget();
-
-	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetPawn()->GetComponentByClass(UPRInventoryComponent::StaticClass())))
+	if(!HasAuthority())
 	{
-		OnControllerInitialized.AddUObject(InventoryComponent, &UPRInventoryComponent::OnControllerInitialized);
+		UE_LOG(LogTemp, Warning, TEXT("APRPlayerController::Init"));
 
-		InventoryComponent->OnUpdateInteractInfo.BindUObject(HUD, &UPRWidgetBase::UpdateInteractInfo);
-		InventoryComponent->OnUpdateEquipment.AddUObject(HUD, &UPRWidgetBase::UpdateEquipment);
-		InventoryComponent->OnUpdateFirearm.AddUObject(HUD, &UPRWidgetBase::UpdateFirearm);
-		InventoryComponent->OnUpdateGroundItems.AddUObject(HUD, &UPRWidgetBase::UpdateGroundItems);
-		InventoryComponent->OnUpdateInventoryItems.AddUObject(HUD, &UPRWidgetBase::UpdateInventoryItems);
+		URyanLibrary::SetupInputs(this, this, DefaultInputMappingContext, true);
 
-		if (APRLobbyPawn* LobbyPawn = Cast<APRLobbyPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), APRLobbyPawn::StaticClass())))
+		SetupWidget();
+
+		if (!LiveCharacter)
 		{
-			InventoryComponent->OnUpdateEquipment.AddUObject(LobbyPawn, &APRLobbyPawn::UpdateEquipment);
+			if (const APRLiveCharacterSpawnPoint* LiveCharacterSpawnPoint = Cast<APRLiveCharacterSpawnPoint>(UGameplayStatics::GetActorOfClass(GetWorld(), APRLiveCharacterSpawnPoint::StaticClass())))
+			{
+				FActorSpawnParameters ActorSpawnParameters;
+				ActorSpawnParameters.Owner = this;
+
+				if (APRLobbyPawn* NewLiveCharacter = GetWorld()->SpawnActor<APRLobbyPawn>(LiveCharacterSpawnPoint->GetActorLocation(), LiveCharacterSpawnPoint->GetActorRotation(), ActorSpawnParameters))
+				{
+					LiveCharacter = NewLiveCharacter;
+					LiveCharacter->InitLiveCharacter(HUD);
+					UE_LOG(LogTemp, Warning, TEXT("APRPlayerController::Init : NewLiveCharacter = %s"), *LiveCharacter.GetName());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("APRPlayerController::Init : LiveCharacter is invalid."));
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("APRPlayerController::Init : There's no LiveCharacterSpawnPoint."));
+			}
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("APRPlayerController::Init : LiveCharacter is already exist."));
+		}
+
+		if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetPawn()->GetComponentByClass(UPRInventoryComponent::StaticClass())))
+		{
+			OnControllerInitialized.AddUObject(InventoryComponent, &UPRInventoryComponent::OnControllerInitialized);
+
+			InventoryComponent->OnUpdateInteractInfo.AddUObject(HUD, &UPRWidgetBase::UpdateInteractInfo);
+			InventoryComponent->OnUpdateEquipment.AddUObject(HUD, &UPRWidgetBase::UpdateEquipment);
+			InventoryComponent->OnUpdateFirearms.AddUObject(HUD, &UPRWidgetBase::UpdateFirearms);
+			InventoryComponent->OnUpdateGroundItems.AddUObject(HUD, &UPRWidgetBase::UpdateGroundItems);
+			InventoryComponent->OnUpdateInventoryItems.AddUObject(HUD, &UPRWidgetBase::UpdateInventoryItems);
+
+			if(LiveCharacter)
+			{
+				InventoryComponent->OnUpdateEquipment.AddUObject(LiveCharacter, &APRLobbyPawn::UpdateEquipment);
+			}
+		}
+
+		if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetPawn()->GetComponentByClass(UPRStatusComponent::StaticClass())))
+		{
+			OnControllerInitialized.AddUObject(StatusComponent, &UPRStatusComponent::OnControllerInitialized);
+
+			StatusComponent->OnUpdateHealthPoint.BindUObject(HUD, &UPRWidgetBase::UpdateHealthPointBar);
+			StatusComponent->OnUpdateStamina.BindUObject(HUD, &UPRWidgetBase::UpdateStaminaBar);
+		}
+
+		if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))
+		{
+			OnControllerInitialized.AddUObject(DebugComponent, &UPRDebugComponent::OnPlayerControllerInitialized);
+		}
+
+		OnControllerInitialized.Broadcast(this);
+
+		PossessedCharacter->OnUpdateBullet.AddUObject(HUD, &UPRWidgetBase::UpdateShowingBullet);
+
+		
 	}
-
-	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetPawn()->GetComponentByClass(UPRStatusComponent::StaticClass())))
-	{
-		OnControllerInitialized.AddUObject(StatusComponent, &UPRStatusComponent::OnControllerInitialized);
-
-		StatusComponent->OnUpdateHealthPoint.BindUObject(HUD, &UPRWidgetBase::UpdateHealthPointBar);
-		StatusComponent->OnUpdateStamina.BindUObject(HUD, &UPRWidgetBase::UpdateStaminaBar);
-	}
-
-	if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))
-	{
-		OnControllerInitialized.AddUObject(DebugComponent, &UPRDebugComponent::OnPlayerControllerInitialized);
-	}
-
-	OnControllerInitialized.Broadcast(this);
 }
 
 
@@ -209,3 +249,15 @@ void APRPlayerController::IA_Equip_Implementation(const FInputActionValue& Value
 	const int32 FirearmIndex = Value.Get<float>() - 1;
 	PossessedCharacter->Server_HoldFirearm(FirearmIndex);
 }
+
+void APRPlayerController::IA_Reload_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnReload(Value);
+}
+
+void APRPlayerController::IA_ADS_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnADS(Value);
+}
+
+

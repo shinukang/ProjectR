@@ -17,15 +17,4 @@ UCLASS()
 class PROJECTR_API UPRGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
-
-public:
-	UFUNCTION(BlueprintCallable)
-	void SetCharacterCostume(FPRCostume CostumeData);
-
-	UFUNCTION(BlueprintCallable)
-	TArray<FPRCostume> GetCharacterCostume() { return CharacterCostumeSetting; }
-
-private:
-	TArray<FPRCostume> CharacterCostumeSetting;
-
 };

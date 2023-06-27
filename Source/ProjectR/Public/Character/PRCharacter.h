@@ -4,13 +4,16 @@
 #include "Character/PRBaseCharacter.h"
 #include "Component/PRInventoryComponent.h"
 #include "Component/PRStatusComponent.h"
-#include "System/PRItemObject.h"
+#include "Item/PRItemDataObject.h"
 #include "Item/PRFirearm.h"
+#include "System/PRLobbyPawn.h"
 #include "PRCharacter.generated.h"
 
 /**
  * Specialized character class, with additional features like held object etc.
  */
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateBulletType, FName);
 
 UCLASS(Blueprintable, BlueprintType)
 class PROJECTR_API APRCharacter : public APRBaseCharacter
@@ -43,16 +46,18 @@ public:
 
 	virtual FVector GetFirstPersonCameraTarget() override;
 
-	void UpdateEquipment(FPRItemData ItemData);
+	virtual void OnRep_PlayerState() override;
+
+	/* Àåºñ(Çï¸ä, ¹æÅºÁ¶³¢, °¡¹æ) ¾÷µ¥ÀÌÆ® ÇÔ¼ö */
 
 	UFUNCTION(Server, Reliable)
-	void Server_UpdateEquipment(FPRItemData ItemData);
+	void Server_UpdateEquipment(EPRCategory SubCategory, FName ID, APRItem* NewEquipmentItem = nullptr);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_UpdateEquipment(FPRItemData ItemData);
+	void Multicast_UpdateEquipment(EPRCategory SubCategory, FName ID);
 
 	UFUNCTION(Server, Reliable)
-	void Server_UpdateFirearm(int32 Index, FPRItemData ItemData);
+	void Server_UpdateFirearm(int32 Index, FPRItemData FirearmItemData);
 
 	UFUNCTION(Server, Reliable)
 	void Server_HoldFirearm(int32 Index);
@@ -60,7 +65,25 @@ public:
 	UFUNCTION()
 	void OnRep_CurrentHeldFirearm();
 
-	virtual void OnShoot(const FInputActionValue& Value) override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	void OnShoot(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	void OnReload(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	void OnAim(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	void OnADS(const FInputActionValue& Value);
+
+	APRFirearm* GetCurrentHeldFirearm() { return CurrentHeldFirearm;  }
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UpdateCostume(const TArray<FPRCostume>& Costumes);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateLiveCharacter(const TArray<FPRCostume>& Costumes);
 
 protected:
 	virtual void Tick(float DeltaTime) override;
@@ -69,12 +92,13 @@ protected:
 
 	virtual void OnOverlayStateChanged(EPROverlayState PreviousState) override;
 
-	void UpdateCostume();
+	//virtual void BecomeViewTarget(APlayerController* PC) override;
+
+	//virtual void EndViewTarget(APlayerController* PC) override;
 
 	void AttachToHand(APRFirearm* Firearm);
 
 	void AttachToBack(APRFirearm* Firearm);
-
 
 	/** Implement on BP to update animation states of held objects */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "PR|HeldObject")
@@ -113,7 +137,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
 	TObjectPtr<USkeletalMeshComponent> Backpack = nullptr;
-
 	UPROPERTY()
 	TObjectPtr<UPRInventoryComponent> PRInventoryComponent = nullptr;
 
@@ -123,11 +146,13 @@ public:
 	UFUNCTION()
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	FOnUpdateBulletType OnUpdateBullet;
+
 private:
 	bool bNeedsColorReset = false;
 
-	UPROPERTY(ReplicatedUsing=OnRep_CurrentHeldFirearm)
+	bool bIsOnADS = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_CurrentHeldFirearm, meta=(AllowPrivateAccess=true))
 	TObjectPtr<APRFirearm> CurrentHeldFirearm = nullptr;
-
-
 };

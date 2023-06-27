@@ -307,23 +307,22 @@ void APRBaseCharacter::SetDesiredGait(const EPRGait NewGait)
 {
 	DesiredGait = NewGait;
 
-	if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetComponentByClass(UPRStatusComponent::StaticClass())))
-	{
-		switch (DesiredGait)
-		{
-		case EPRGait::Sprinting:
-			StatusComponent->DecreaseStamina();
-			break;
-
-		case EPRGait::Running:
-		case EPRGait::Walking:
-			StatusComponent->IncreaseStamina();
-			break;
-		}
-	}
-
 	if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
+		if (UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetComponentByClass(UPRStatusComponent::StaticClass())))
+		{
+			switch (DesiredGait)
+			{
+			case EPRGait::Sprinting:
+				StatusComponent->DecreaseStamina();
+				break;
+
+			case EPRGait::Running:
+			case EPRGait::Walking:
+				StatusComponent->IncreaseStamina();
+				break;
+			}
+		}
 		Server_SetDesiredGait(NewGait);
 	}
 }
@@ -1251,18 +1250,6 @@ void APRBaseCharacter::OnCameraRot_Implementation(const FInputActionValue& Value
 	AddControllerPitchInput(LookUpDownRate * Value.Get<FVector2D>().Y);
 }
 
-void APRBaseCharacter::OnShoot(const FInputActionValue& Value)
-{
-	if(Value.Get<bool>())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Press OnShoot"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Release OnShoot"));
-	}
-}
-
 void APRBaseCharacter::OnJump_Implementation(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
@@ -1310,25 +1297,6 @@ void APRBaseCharacter::OnSprint_Implementation(const FInputActionValue& Value)
 	}
 }
 
-void APRBaseCharacter::OnAim_Implementation(const FInputActionValue& Value)
-{
-	if (Value.Get<bool>())
-	{
-		// AimAction: Hold "AimAction" to enter the aiming mode, release to revert back the desired rotation mode.
-		SetRotationMode(EPRRotationMode::Aiming);
-	}
-	else
-	{
-		if (ViewMode == EPRViewMode::ThirdPerson)
-		{
-			SetRotationMode(DesiredRotationMode);
-		}
-		else if (ViewMode == EPRViewMode::FirstPerson)
-		{
-			SetRotationMode(EPRRotationMode::LookingDirection);
-		}
-	}
-}
 
 void APRBaseCharacter::OnCameraTap_Implementation(const FInputActionValue& Value)
 {

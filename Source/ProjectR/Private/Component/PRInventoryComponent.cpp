@@ -3,8 +3,10 @@
 
 #include "Component/PRInventoryComponent.h"
 
+#include "Character/PRCharacter.h"
+#include "Engine/ActorChannel.h"
 #include "Character/PRPlayerController.h"
-#include "Library/PRItemStructLibrary.h"
+#include "Library/PRItemLibrary.h"
 #include "Library/RyanLibrary.h"
 #include "Net/UnrealNetwork.h"
 
@@ -14,23 +16,33 @@ UPRInventoryComponent::UPRInventoryComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 
-	Firearms.Init(FPRItemData(), MaxCountOfWeapon);
+	Firearms.Init(nullptr, MaxCountOfWeapon);
 }
 
 void UPRInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UPRInventoryComponent, DetectedItem);
 	DOREPLIFETIME(UPRInventoryComponent, GroundedItems);
-	DOREPLIFETIME(UPRInventoryComponent, InventoryItems);
+	DOREPLIFETIME_CONDITION(UPRInventoryComponent, InventoryItems, COND_None);
 	DOREPLIFETIME(UPRInventoryComponent, Firearms);
 }
 
+bool UPRInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+{
+	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
+
+	//bWroteSomething |= Channel->ReplicateSubobjectList(InventoryItems, *Bunch, *RepFlags);
+
+	//bWroteSomething |= Channel->ReplicateSubobjectList(GroundedItems, *Bunch, *RepFlags);
+
+	return bWroteSomething;
+}
 
 // Called when the game starts
 void UPRInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	SetIsReplicated(true);
 }
 
 void UPRInventoryComponent::OnControllerInitialized(APlayerController* PlayerController)
@@ -44,9 +56,174 @@ void UPRInventoryComponent::OnControllerInitialized(APlayerController* PlayerCon
 void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	Client_FindAimedItem();
+	FindGroundItems();
+}
 
-	int32 ItemAmount = -1;
+void UPRInventoryComponent::Server_AddItemToInventory_Implementation(APRItem* Item, int32 Index)
+{
+	if(Item)
+	{
+		if (TryAddItemToInventory(Item->ItemData))
+		{
+			Item->Destroy();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::Server_AddItemToInventory : Failure to TryAddItemToInventory."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::Server_AddItemToInventory : Item or ItemDataObject is invalid."));
+	}
+}
 
+/*
+void UPRInventoryComponent::Server_AddItemToInventoryWithoutDestroy_Implementation(UPRItemDataObject* ItemDataObject)
+{
+	if (ItemDataObject)
+	{
+		TryAddItemToInventory(ItemDataObject);
+	}
+}
+*/
+
+
+bool UPRInventoryComponent::TryAddItemToInventory(FPRItemData ItemDataToAdd)
+{
+	int32 SelectedIndex = ItemDataToAdd.Index;
+
+	switch(ItemDataToAdd.Category)
+	{
+	case EPRCategory::Default:
+		return false;
+		
+	case EPRCategory::Firearm_Primary:
+	case EPRCategory::Firearm_Secondary:
+		if (SelectedIndex == INDEX_NONE)
+		{
+			SelectedIndex = GetValidFirearmSlotIndex(ItemDataToAdd.Category);
+
+			if (SelectedIndex == INDEX_NONE)
+			{
+				return false;
+			}
+		}
+		if(APRCharacter* Character = Cast<APRCharacter>(GetOwner()))
+		{
+			Character->Server_UpdateFirearm(SelectedIndex, ItemDataToAdd);
+			return true;
+		}
+		return false;
+
+	case EPRCategory::Equipment_HeadGear:
+	case EPRCategory::Equipment_Vest:
+	case EPRCategory::Equipment_Backpack:
+
+		if (APRCharacter* Character = Cast<APRCharacter>(GetOwner()))
+		{
+			Character->Server_UpdateEquipment(ItemDataToAdd.Category, ItemDataToAdd.ID);
+			return true;
+		}
+		return false;
+
+	case EPRCategory::Ammunition:
+	case EPRCategory::Medicine_HealthPoint:
+	case EPRCategory::Medicine_Stamina:
+		for (int32 NewIndex = 0; NewIndex < InventoryItems.Num(); NewIndex++)
+		{
+			if (InventoryItems[NewIndex].ID == ItemDataToAdd.ID)
+			{
+				InventoryItems[NewIndex].Amount += ItemDataToAdd.Amount;
+				return true;
+			}
+		}
+	case EPRCategory::Attachment_Barrel:
+	case EPRCategory::Attachment_Grip:
+	case EPRCategory::Attachment_Scope:
+		InventoryItems.Add(ItemDataToAdd);
+		return true;
+	}
+	return false;
+}
+
+void UPRInventoryComponent::Server_RemoveFromInventory_Implementation(FPRItemData ItemDataToRemove, bool bNeedToSpawn)
+{
+	if (TryRemoveFromInventory(ItemDataToRemove))
+	{
+		if (bNeedToSpawn)
+		{
+			FVector SpawnLocation = GetSpawnLocation();
+			FRotator SpawnRotation = FRotator::ZeroRotator;
+
+			if (APRItem* Item = GetWorld()->SpawnActor<APRItem>(SpawnLocation, SpawnRotation))
+			{
+				Item->Init(ItemDataToRemove);
+			}
+		}
+		else
+		{
+
+		}
+	}
+}
+
+bool UPRInventoryComponent::TryRemoveFromInventory(FPRItemData ItemDataToRemove)
+{
+	switch (ItemDataToRemove.Category)
+	{
+	case EPRCategory::Default:
+		return false;
+
+	case EPRCategory::Firearm_Primary:
+	case EPRCategory::Firearm_Secondary:
+		//Firearms.
+		return false;
+
+	case EPRCategory::Equipment_HeadGear:
+	case EPRCategory::Equipment_Vest:
+	case EPRCategory::Equipment_Backpack:
+		if (UPRItemLibrary::IsValidItemID(ItemDataToRemove.ID))
+		{
+			if (APRItem* NewItem = GetWorld()->SpawnActor<APRItem>())
+			{
+				NewItem->Init(FPRItemData(ItemDataToRemove.ID));
+				return true;
+			}
+			return false;
+		}
+		return false;
+	case EPRCategory::Attachment_Barrel:
+	case EPRCategory::Attachment_Scope:
+	case EPRCategory::Attachment_Grip:
+	case EPRCategory::Ammunition:
+	case EPRCategory::Medicine_HealthPoint:
+	case EPRCategory::Medicine_Stamina:
+		int32 Index = InventoryItems.Find(ItemDataToRemove);
+
+		if (Index != INDEX_NONE)
+		{
+			if (InventoryItems[Index].Amount -= ItemDataToRemove.Amount <= 0)
+			{
+				InventoryItems.RemoveAt(Index);
+			}
+			OnRep_InventoryItems();
+			OnUpdateInventoryItems.Broadcast(InventoryItems);
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
+void UPRInventoryComponent::OnInteractAction()
+{
+	Server_AddItemToInventory(DetectedItem);
+}
+
+void UPRInventoryComponent::Client_FindAimedItem_Implementation()
+{
 	if (APRItem* NewDetectedItem = FindAimedItem())
 	{
 		if (DetectedItem != NewDetectedItem)
@@ -54,89 +231,15 @@ void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 			// UI update
 			DetectedItem = NewDetectedItem;
 
-			if (GetOwnerRole() != ROLE_Authority) // 클라이언트
-			{
-				OnUpdateInteractInfo.Execute(DetectedItem->GetItemData().GetBaseData()->Name);
-			}
+			OnUpdateInteractInfo.Broadcast(UPRItemLibrary::GetBaseData(DetectedItem->ItemData.ID).Name);
 		}
 	}
 	else
 	{
-		// UI update (remove)
 		if (DetectedItem != nullptr)
 		{
 			DetectedItem = nullptr;
-
-			if (GetOwnerRole() != ROLE_Authority)
-			{
-				OnUpdateInteractInfo.Execute(FText());
-			}
-		}
-	}
-	FindGroundItems();
-}
-
-
-bool UPRInventoryComponent::AddItemToInventory(APRItem* Item, int32 Index)
-{
-	int32 SelectedIndex = Index;
-
-	switch(Item->GetItemData().MainCategory)
-	{
-	case EPRMainCategory::Firearm:
-		if (SelectedIndex == INDEX_NONE)
-		{
-			SelectedIndex = GetValidFirearmSlotIndex(Item->GetItemData().SubCategory);
-
-			if (SelectedIndex == INDEX_NONE)
-			{
-				return false;
-			}
-		}
-		Firearms[SelectedIndex] = Item->GetItemData();
-		Client_UpdateFirearm(SelectedIndex, Item->GetItemData());
-		return true;
-
-	case EPRMainCategory::Equipment:
-		Equipments.Add(Item->GetItemData().SubCategory, Item->GetItemData());
-		Multicast_UpdateEquipment(Item->GetItemData());
-		return true;
-
-	case EPRMainCategory::Ammunition:
-	case EPRMainCategory::Medicine:
-		for (int32 NewIndex = 0; NewIndex < InventoryItems.Num(); NewIndex++)
-		{
-			if (InventoryItems[NewIndex] == Item->GetItemData())
-			{
-				InventoryItems[NewIndex].Amount += Item->GetItemData().Amount;
-				Client_UpdateInventoryItems(InventoryItems);
-				return true;
-			}
-		}
-	case EPRMainCategory::Attachment:
-		InventoryItems.Add(Item->GetItemData());
-		Client_UpdateInventoryItems(InventoryItems);
-		return true;
-
-	default:
-		break;
-	}
-	return false;
-}
-
-bool UPRInventoryComponent::RemoveFromInventory(FName ID, int32 Amount)
-{
-	return true;
-}
-
-void UPRInventoryComponent::OnInteractAction_Implementation()
-{
-	if(DetectedItem)
-	{
-		if (AddItemToInventory(DetectedItem))
-		{
-			DetectedItem->SetOwner(this->GetOwner());
-			DetectedItem->DestroyItem();
+			OnUpdateInteractInfo.Broadcast(FText());
 		}
 	}
 }
@@ -163,37 +266,40 @@ APRItem* UPRInventoryComponent::FindAimedItem()
 	}
 	return nullptr;
 }
-
 void UPRInventoryComponent::FindGroundItems()
 {
 	if(bIsInventoryOpen)
 	{
-		GroundedItems.Empty();
-		
-		TArray<AActor*> ActorsToIgnore;
-		TArray<FHitResult> HitResults;
-		FVector SweepCenter = GetOwner()->GetActorLocation();
-
-		GetWorld()->SweepMultiByChannel(HitResults, SweepCenter, SweepCenter, FQuat(0.0f), ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(500.0f));
-
-		for(FHitResult HitResult : HitResults)
-		{
-			if(APRItem* DetectedGroundItem = Cast<APRItem>(HitResult.GetActor()))
-			{
-				GroundedItems.Add(DetectedGroundItem);
-			}
-		}
-		OnUpdateGroundItems.Broadcast(GroundedItems);
+		Server_FindGroundItems();
 	}
 }
 
-int32 UPRInventoryComponent::GetValidFirearmSlotIndex(EPRSubCategory Category)
+void UPRInventoryComponent::Server_FindGroundItems_Implementation()
+{
+	GroundedItems.Empty();
+
+	TArray<AActor*> ActorsToIgnore;
+	TArray<FHitResult> HitResults;
+	FVector SweepCenter = GetOwner()->GetActorLocation();
+
+	GetWorld()->SweepMultiByChannel(HitResults, SweepCenter, SweepCenter, FQuat(0.0f), ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(500.0f));
+
+	for (FHitResult HitResult : HitResults)
+	{
+		if (APRItem* DetectedGroundItem = Cast<APRItem>(HitResult.GetActor()))
+		{
+			GroundedItems.Add(DetectedGroundItem);
+		}
+	}
+}
+
+int32 UPRInventoryComponent::GetValidFirearmSlotIndex(EPRCategory Category)
 {
 	int32 StartIndex = 0;
 
 	switch (Category)
 	{
-	case EPRSubCategory::Firearm_Primary:
+	case EPRCategory::Firearm_Primary:
 	
 		if (CurrentFirearmIndex != INDEX_NONE)
 		{
@@ -205,7 +311,7 @@ int32 UPRInventoryComponent::GetValidFirearmSlotIndex(EPRSubCategory Category)
 		}
 		break;
 
-	case EPRSubCategory::Firearm_Secondary:
+	case EPRCategory::Firearm_Secondary:
 		if (CurrentFirearmIndex != INDEX_NONE)
 		{
 			if (CurrentFirearmIndex > 1)
@@ -224,98 +330,68 @@ int32 UPRInventoryComponent::GetValidFirearmSlotIndex(EPRSubCategory Category)
 	for (int32 Index = StartIndex; Index < StartIndex + 2; Index++)
 	{
 		// 빈 슬롯 중 인덱스가 작은 곳을 찾아서 반환
-		if (!Firearms[Index].IsValid()) return Index;
+		if (!Firearms[Index]) return Index;
 	}
 	// 모든 인덱스가 꽉 차있다면,
 	return INDEX_NONE;
 }
 
-
-/*
-void UPRInventoryComponent::Multicast_EquipFirearm_Implementation(APRFirearm* NewFirearm, int32 Index)
+void UPRInventoryComponent::OnRep_InventoryItems()
 {
-	if (!NewFirearm) return;
-
-	if(Character)
-	{
-		if (APRFirearm* PreviousFirearm = Firearms[Index])
-		{
-			if(PreviousFirearm != NewFirearm)
-			{
-				PreviousFirearm->Destroy();
-			}
-		}
-		const FString SocketString = FString::Printf(TEXT("Firearm_Socket_0%d"), Index + 1);
-		const FName SocketName = FName(*SocketString);
-		NewFirearm->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-		UE_LOG(LogTemp, Warning, TEXT("EquipFirearm : %s"), *NewFirearm->GetName());
-	}
-}
-
-
-void UPRInventoryComponent::HoldFirearm(int32 Index)
-{
-	if (Character)
-	{
-		for (int FirearmIndex = 0; FirearmIndex < Firearms.Num(); FirearmIndex++)
-		{
-			if (FirearmIndex == Index)
-			{
-				if (Firearms[FirearmIndex] != nullptr)
-				{
-					APRFirearm* SelectedFirearm = Firearms[Index];
-
-					SelectedFirearm->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(TEXT("VB LHS_ik_hand_gun")));
-
-					const EPROverlayState OverlayState = SelectedFirearm->ItemData.GetAdvancedData<FPRFirearmData>()->OverlayState;
-
-					Character->SetOverlayState(OverlayState);
-
-					CurrentFirearmIndex = Index;
-				}
-				else
-				{
-					Character->SetOverlayState(EPROverlayState::Default);
-				}
-				
-			}
-			else
-			{
-				Multicast_EquipFirearm(Firearms[FirearmIndex], FirearmIndex);
-			}
-		}
-	}
-}
-*/
-
-void UPRInventoryComponent::OnRep_DetectedItem()
-{
-	if(GetOwner()->HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("OnRep_DetectedItem : Owner has Authority"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("OnRep_DetectedItem : Owner doesn't have Authority"));
-	}
-}
-
-void UPRInventoryComponent::Client_UpdateInventoryItems_Implementation(const TArray<FPRItemData>& InInventoryItems)
-{
-	//UE_LOG(LogTemp, Warning, TEXT("Client_UpdateInventoryItems"));
-	InventoryItems = InInventoryItems;
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_InventoryItems"));
 	OnUpdateInventoryItems.Broadcast(InventoryItems);
 }
 
-void UPRInventoryComponent::Multicast_UpdateEquipment_Implementation(FPRItemData ItemData)
+void UPRInventoryComponent::OnRep_GroundedItems()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Client_UpdateEquipment"));
-	Equipments.Add(ItemData.SubCategory, ItemData);
-	OnUpdateEquipment.Broadcast(ItemData);
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_GrounedItmes"));
+	OnUpdateGroundItems.Broadcast(GroundedItems);
 }
 
-void UPRInventoryComponent::Client_UpdateFirearm_Implementation(int32 Index, FPRItemData ItemData)
+
+void UPRInventoryComponent::Client_UpdateEquipment_Implementation(EPRCategory SubCategory, UPRItemDataObject* ItemDataObject)
 {
-	Firearms[Index] = ItemData;
-	OnUpdateFirearm.Broadcast(Index, ItemData);
+	/*
+	UE_LOG(LogTemp, Warning, TEXT("Client_UpdateEquipment"));
+	OnUpdateEquipment.Broadcast(SubCategory, ItemDataObject);
+	*/
+}
+
+FPRItemData* UPRInventoryComponent::GetInventoryItem(FPRItemData ItemDataToSearch)
+{
+	for(int32 Index = 0; Index < InventoryItems.Num(); Index++)
+	{
+		if (InventoryItems[Index] == &ItemDataToSearch)
+		{
+			return &InventoryItems[Index];
+		}
+	}
+	return nullptr;
+}
+
+FPRItemData* UPRInventoryComponent::GetInventoryItem(FName IDToSearch)
+{
+	for (int32 Index = 0; Index < InventoryItems.Num(); Index++)
+	{
+		if (InventoryItems[Index].ID == IDToSearch)
+		{
+			return &InventoryItems[Index];
+		}
+	}
+	return nullptr;
+}
+
+FVector UPRInventoryComponent::GetSpawnLocation()
+{
+	FVector Start = GetOwner()->GetActorLocation() + GetOwner()->GetActorRotation().Vector() * 50.0f;
+	FVector End = Start + FVector(0.0f, 0.0f, -200.0f);
+
+	FHitResult HitResult;
+	FVector SpawnLocation = End;
+
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility))
+	{
+		SpawnLocation = HitResult.ImpactPoint;
+	}
+	return SpawnLocation;
 }

@@ -6,6 +6,7 @@
 #include "Interface/PRInteractInterface.h"
 #include "Component/PRStatusComponent.h"
 #include "Component/PRInventoryComponent.h"
+#include "System/PRLobbyPawn.h"
 #include "Widget/PRWidgetBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "PRPlayerController.generated.h"
@@ -14,6 +15,7 @@ class APRCharacter;
 class UInputMappingContext;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnControllerInitialized, APlayerController*)
+
 /**
  * Player controller class
  */
@@ -100,13 +102,26 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_Equip(const FInputActionValue& Value);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_Reload(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_ADS(const FInputActionValue& Value);
+
 public:
 	/** Main character reference */
 	UPROPERTY(BlueprintReadOnly, Category = "PR")
 	TObjectPtr<APRCharacter> PossessedCharacter = nullptr;
 
+	/** Inventory live character reference */
+	UPROPERTY(BlueprintReadOnly, Category = "PR")
+	TObjectPtr<APRLobbyPawn> LiveCharacter = nullptr;
+
 	/* HUD reference */
 	FOnControllerInitialized OnControllerInitialized;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TObjectPtr<UPRWidgetBase> HUD = nullptr;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
@@ -115,6 +130,5 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputMappingContext> RestrictedInputMappingContext = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TObjectPtr<UPRWidgetBase> HUD = nullptr;
+
 };

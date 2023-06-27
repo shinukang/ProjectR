@@ -2,9 +2,9 @@
 
 
 #include "Item/PRItem.h"
-
+#include "Engine/ActorChannel.h"
 #include "Component/PRInventoryComponent.h"
-#include "Library/PRItemStructLibrary.h"
+#include "Library/PRItemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -21,6 +21,7 @@ APRItem::APRItem()
 	Collision = CreateDefaultSubobject<UCapsuleComponent>("Collision");
 	Collision->SetCollisionProfileName(FName(TEXT("InteractiveObject")), true);
 	Collision->SetupAttachment(Mesh, FName("CollisionSocket"));
+
 }
 
 // Called when the game starts or when spawned
@@ -32,68 +33,28 @@ void APRItem::BeginPlay()
 void APRItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(APRItem, ItemObject);
+	DOREPLIFETIME(APRItem, ItemData);
 }
 
-void APRItem::Init()
+void APRItem::Init(FPRItemData NewItemData)
 {
-	ItemObject = NewObject<UPRItemObject>(this);
-
-	if(ItemObject)
-	{
-		ItemObject->Init();
-
-		Mesh->SetStaticMesh(ItemObject->BaseData.Mesh);
-		Mesh->SetRelativeTransform(ItemObject->BaseData.MeshTransform);
-		Mesh->SetCollisionProfileName(FName(TEXT("NoCollision")));
-
-		Collision->SetCapsuleHalfHeight(ItemObject->BaseData.CollisionHalfHeight);
-		Collision->SetCapsuleRadius(ItemObject->BaseData.CollisionRadius);
-	}
+	ItemData = NewItemData;
 }
 
-// Called every frame
-void APRItem::Tick(float DeltaTime)
+void APRItem::OnRep_ItemData()
 {
-	Super::Tick(DeltaTime);
+	const FPRBaseData BaseData = UPRItemLibrary::GetBaseData(ItemData.ID);
 
+	Mesh->SetStaticMesh(BaseData.Mesh);
+	Collision->SetCapsuleHalfHeight(BaseData.CollisionHalfHeight);
+	Collision->SetCapsuleRadius(BaseData.CollisionRadius);
 }
 
-bool APRItem::CanInteract_Implementation()
+
+/*
+void APRItem::Init(UPRItemDataObject* NewItemDataObject)
 {
-	return bIsInteractive;
+	//ItemDataObject = NewItemDataObject;
+	//ItemDataObject->Rename(nullptr, this);
 }
-
-FName APRItem::GetItemID_Implementation()
-{
-	return ID;
-}
-
-int32 APRItem::GetItemAmount_Implementation()
-{
-	return 1;
-}
-
-void APRItem::OnInteract_Implementation(UPRInventoryComponent* InventoryComponent)
-{
-	//ItemObject->Rename(TEXT("%s"), InventoryComponent);
-	//ItemObject = nullptr;
-	//Destroy();
-}
-
-void APRItem::DestroyItem()
-{
-	if(GetOwner()->HasAuthority())
-	{
-		Server_DestroyItem();
-	}
-}
-
-void APRItem::Server_DestroyItem_Implementation()
-{
-	Destroy();
-}
-
-
-
-
+*/
