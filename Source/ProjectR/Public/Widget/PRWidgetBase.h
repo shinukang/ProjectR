@@ -50,6 +50,9 @@ public:
 	void UpdateAttachment(int32 Index, EPRCategory SubCategory, FName ID);
 
 	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateCapacity(float Capacity);
+
+	UFUNCTION(BlueprintImplementableEvent)
 	void SetLiveCharacterMaterial(UMaterialInterface* NewLiveCharacterMaterial);
 
 	UFUNCTION(BlueprintImplementableEvent)

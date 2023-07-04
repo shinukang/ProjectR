@@ -37,11 +37,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PR|Animation")
 	void PlayDynamicTransition(float ReTriggerDelay, FPRDynamicMontageParams Parameters);
 
+	UFUNCTION(BlueprintCallable, Category = "PR|Animation")
+	void SetRecoilAnimParams(float Duration, float RecoilStrength, float RecoilHandsAnimStrength);
+
 	UFUNCTION(BlueprintCallable, Category = "PR|Event")
 	void OnJumped();
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Event")
 	void OnPivot();
+
+	
+
 
 protected:
 
@@ -183,6 +189,18 @@ public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Character Information")
 	FPROverlayState OverlayState = EPROverlayState::Default;
 
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Character Information")
+	bool bNeedToResetOverlayState = false;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Character Information")
+	bool bNeedToAddRecoilImpulse = false;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Character Information")
+	float RecoilStrength = 1.0f;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Character Information")
+	float RecoilHandsAnimStrength = 0.0f;
+
 	/** Anim Graph - Grounded */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Read Only Data|Anim Graph - Grounded", Meta = (
 		ShowOnlyInnerProperties))
@@ -284,6 +302,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Configuration|Anim Graph - Foot IK")
 	FName IkFootR_BoneName = FName(TEXT("ik_foot_r"));
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration|Anim Graph - Overlay")
+	UAnimSequence* BasePoseSequence = nullptr;
+
 private:
 	FTimerHandle OnPivotTimer;
 
@@ -292,6 +313,7 @@ private:
 	FTimerHandle OnJumpedTimer;
 
 	bool bCanPlayDynamicTransition = true;
+
 
 	UPROPERTY()
 	TObjectPtr<UPRDebugComponent> PRDebugComponent = nullptr;

@@ -27,7 +27,7 @@ void UPRItemDataObject::AddItemToInventory(APlayerController* PlayerController, 
 			}
 			else
 			{
-				//InventoryComponent->Server_AddItemToInventoryWithoutDestroy(this);
+				InventoryComponent->Server_AddItemToInventoryWithoutDestroy(ItemData);
 			}
 		}
 	}
@@ -53,7 +53,6 @@ void UPRItemDataObject::AddEquipmentToCharacter(APlayerController* PlayerControl
 		if (APRCharacter* Character = Cast<APRCharacter>(PlayerController->GetPawn()))
 		{
 			Character->Server_UpdateEquipment(ItemData.Category, ItemData.ID, Cast<APRItem>(GetOuter()));
-			UE_LOG(LogTemp, Warning, TEXT("UPRItemDataObject::AddEquipmentToCharacter : %s"), *GetOuter()->GetName())
 		}
 	}
 }
@@ -63,6 +62,23 @@ void UPRItemDataObject::RemoveItemFromInventory(APlayerController* PlayerControl
 	{
 		if (APRCharacter* Character = Cast<APRCharacter>(PlayerController->GetPawn()))
 		{
+			if (APRFirearm* Firearm = Cast<APRFirearm>(GetOuter()))
+			{
+				TArray<EPRCategory> Attachments;
+
+				Firearm->Attachments.GetKeys(Attachments);
+
+				for (EPRCategory Category : Attachments)
+				{
+					Firearm->Server_RemoveAttachment(Category, false);
+				}
+
+				if(Firearm->LoadedBullets > 0)
+				{
+					Character->PRInventoryComponent->Server_AddItemToInventoryWithoutDestroy(FPRItemData(Firearm->FirearmData.AmmunitionID, Firearm->LoadedBullets));
+				}
+			}
+					
 			Character->PRInventoryComponent->Server_RemoveFromInventory(ItemData, bNeedToSpawn);
 		}
 	}
@@ -101,6 +117,17 @@ void UPRItemDataObject::UseItem(APlayerController* PlayerController)
 				Character->PRInventoryComponent->Server_RemoveFromInventory(ItemData, false);
 				Character->PRStatusComponent->Server_UseMedicine(ItemData);
 			}
+		}
+	}
+}
+
+void UPRItemDataObject::SwapFirearm(APlayerController* PlayerController, int32 NewIndex)
+{
+	if (PlayerController)
+	{
+		if (APRCharacter* Character = Cast<APRCharacter>(PlayerController->GetPawn()))
+		{
+			Character->PRInventoryComponent->Server_SwapFirearm(ItemData.Index, NewIndex);
 		}
 	}
 }

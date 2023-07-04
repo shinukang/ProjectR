@@ -59,6 +59,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool IsDead() { return HealthPoint <= 0.0f; }
 
+	void SetHeadArmor(float NewHeadArmor);
+
+	void SetBodyArmor(float NewBodyArmor);
+
+	float GetHeadArmor() const { return HeadArmor;  }
+
+	float GetBodyArmor() const { return BodyArmor;  }
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -92,13 +100,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting|Stamina")
 	float DecrementalCycleOfStamina = 0.0f;
 
-
-
 private:
 	UPROPERTY(ReplicatedUsing =OnRep_HealthPoint)
 	float HealthPoint = 1.0f;
 
 	float Stamina = 1.0f;
+
+	float HeadArmor = 0.0f;
+
+	float BodyArmor = 0.0f;
 
 	FTimerHandle IncreaseStaminaHandle;
 

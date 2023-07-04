@@ -18,6 +18,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGroundItems, const TArray<APRItem*>
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateInventoryItems, const TArray<FPRItemData>&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateFirearms, const TArray<APRFirearm*>&);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateEquipment, EPRCategory, FName);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateCapacity, float);
 
 UCLASS(Blueprintable, BlueprintType)
 class PROJECTR_API UPRInventoryComponent : public UPRBaseComponent
@@ -38,7 +39,13 @@ public:
 	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
 	UFUNCTION(Server, Reliable)
+	void Server_SwapFirearm(int32 PrevIndex, int32 NewIndex);
+
+	UFUNCTION(Server, Reliable)
 	void Server_AddItemToInventory(APRItem* Item, int32 Index = -1);
+
+	UFUNCTION(Server, Reliable)
+	void Server_AddItemToInventoryWithoutDestroy(FPRItemData ItemData);
 
 	bool TryAddItemToInventory(FPRItemData ItemDataToAdd);
 
@@ -57,6 +64,8 @@ public:
 	FPRItemData* GetInventoryItem(FName IDToSearch);
 
 	FVector GetSpawnLocation();
+
+	void SetMaxCapacity(float NewMaxCapacity);
 
 protected:
 	// Called when the game starts
@@ -78,7 +87,9 @@ public:
 
 	FOnUpdateFirearms OnUpdateFirearms;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated)
+	FOnUpdateCapacity OnUpdateCapacity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_Firearms)
 	TArray<TObjectPtr<APRFirearm>> Firearms;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -97,10 +108,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MaxCapacity = 40.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing=OnRep_CurrentCapacity)
 	float CurrentCapacity = 0.0f;
 
 private:
+
 	// Check the interactive actor
 	UFUNCTION(Client, Reliable)
 	void Client_FindAimedItem();
@@ -116,10 +128,16 @@ private:
 	int32 GetValidFirearmSlotIndex(EPRCategory Category);
 
 	UFUNCTION()
+	void OnRep_Firearms();
+
+	UFUNCTION()
 	void OnRep_InventoryItems();
 
 	UFUNCTION()
 	void OnRep_GroundedItems();
+
+	UFUNCTION()
+	void OnRep_CurrentCapacity();
 
 	// Character camera reference
 	TObjectPtr<APlayerCameraManager> Camera = nullptr;

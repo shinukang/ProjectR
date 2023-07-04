@@ -69,6 +69,7 @@ void APRPlayerController::Init()
 			InventoryComponent->OnUpdateFirearms.AddUObject(HUD, &UPRWidgetBase::UpdateFirearms);
 			InventoryComponent->OnUpdateGroundItems.AddUObject(HUD, &UPRWidgetBase::UpdateGroundItems);
 			InventoryComponent->OnUpdateInventoryItems.AddUObject(HUD, &UPRWidgetBase::UpdateInventoryItems);
+			InventoryComponent->OnUpdateCapacity.AddUObject(HUD, &UPRWidgetBase::UpdateCapacity);
 
 			if(LiveCharacter)
 			{
@@ -246,8 +247,8 @@ void APRPlayerController::IA_Inventory_Implementation(const FInputActionValue& V
 
 void APRPlayerController::IA_Equip_Implementation(const FInputActionValue& Value)
 {
-	const int32 FirearmIndex = Value.Get<float>() - 1;
-	PossessedCharacter->Server_HoldFirearm(FirearmIndex);
+	const int32 Index = Value.Get<float>() - 1;
+	PossessedCharacter->Server_HoldFirearm(Index);
 }
 
 void APRPlayerController::IA_Reload_Implementation(const FInputActionValue& Value)

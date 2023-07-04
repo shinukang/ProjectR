@@ -14,7 +14,8 @@ APRBullet::APRBullet()
 
 	Collision = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
 	Collision->InitSphereRadius(1.5f);
-	Collision->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	Collision->SetCollisionProfileName(FName("Projectile"));
+	Collision->SetGenerateOverlapEvents(false);
 	RootComponent = Collision;
 
 	if(GetLocalRole() == ROLE_Authority)
@@ -35,8 +36,8 @@ APRBullet::APRBullet()
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->SetUpdatedComponent(Collision);
-	ProjectileMovement->InitialSpeed = 1000.0f;
-	ProjectileMovement->MaxSpeed = 1000.0f;
+	ProjectileMovement->InitialSpeed = 10000.0f;
+	ProjectileMovement->MaxSpeed = 10000.0f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->ProjectileGravityScale = 0.0f;
 }
@@ -45,6 +46,7 @@ APRBullet::APRBullet()
 void APRBullet::BeginPlay()
 {
 	Super::BeginPlay();
+	Collision->IgnoreActorWhenMoving(GetInstigator(), true);
 }
 
 // Called every frame
@@ -57,7 +59,7 @@ void APRBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPr
 {
 	if(OtherActor)
 	{
-		UGameplayStatics::ApplyPointDamage(OtherActor, Damage, NormalImpulse, Hit, GetInstigator()->Controller, this, DamageType);
+		UGameplayStatics::ApplyPointDamage(OtherActor, Damage, Hit.ImpactNormal, Hit, GetInstigator()->Controller, this, DamageType);
 	}
 	Destroy();
 }

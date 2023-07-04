@@ -5,8 +5,11 @@
 #include "Engine/ActorChannel.h"
 #include "Character/PRCharacter.h"
 #include "Character/PRPlayerController.h"
+#include "Character/Animation/PRCharacterAnimInstance.h"
 #include "Library/PRItemLibrary.h"
-#include "Library/RyanLibrary.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+#include "Component/PRBaseComponent.h"
 #include "Runtime/Engine/Classes/Engine/TextureRenderTarget2D.h"
 #include "Component/PRInventoryComponent.h"
 #include "Item/PRBullet.h"
@@ -59,9 +62,14 @@ void APRFirearm::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(APRPlayerController* PlayerController = Cast<APRPlayerController>(GetOwner()))
+	if(APRPlayerController* PRPlayerController = Cast<APRPlayerController>(GetOwner()))
 	{
-		OnUpdateAttachment.AddUObject(PlayerController->HUD, &UPRWidgetBase::UpdateAttachment);
+		OnUpdateAttachment.AddUObject(PRPlayerController->HUD, &UPRWidgetBase::UpdateAttachment);
+
+		if (UPRCharacterAnimInstance* PRAnimInstance = Cast<UPRCharacterAnimInstance>(PRPlayerController->PossessedCharacter->GetMesh()->GetAnimInstance()))
+		{
+			OnFire.BindUObject(PRAnimInstance, &UPRCharacterAnimInstance::SetRecoilAnimParams);
+		}
 	}
 }
 
@@ -78,11 +86,6 @@ void APRFirearm::Init(FPRItemData NewItemData)
 void APRFirearm::OnRep_ItemData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("APRFirearm::OnRep_ItemData"));
-
-	if (APRCharacter* OwnerCharacter = Cast<APRCharacter>(GetAttachParentActor()))
-	{
-		OwnerCharacter->PRInventoryComponent->OnUpdateFirearms.Broadcast(OwnerCharacter->PRInventoryComponent->Firearms);
-	}
 }
 
 void APRFirearm::OnRep_FirearmData()
@@ -114,20 +117,19 @@ void APRFirearm::Fire()
 
 			if(bIsOnADS)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("ADS"));
 				CamLoc = ADSCam->GetComponentLocation();
 				CamRot = ADSCam->GetComponentRotation();
-
-				DrawDebugLine(GetWorld(), CamLoc, CamLoc + FirearmData.EffectiveRange * CamRot.Vector(), FColor::Red, true, 5.0f);
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Third"));
 				if (const APlayerCameraManager* ThirdCamera = Cast<APlayerController>(GetOwner())->PlayerCameraManager)
 				{
 					ThirdCamera->GetCameraViewPoint(CamLoc, CamRot);
 				}
 			}
+
+			OnFire.Execute(FirearmData.FireRate / 2.0f, FirearmData.RecoilStrength, FirearmData.RecoilHandsAnimStrength);
+
 			TArray<AActor*> ActorsToIgnore = { this, GetOwner(), GetAttachParentActor() };
 
 			FHitResult HitResult;
@@ -136,23 +138,15 @@ void APRFirearm::Fire()
 			FCollisionQueryParams CollisionQueryParams;
 			CollisionQueryParams.AddIgnoredActors(ActorsToIgnore);
 
-		
-			if (GetWorld()->LineTraceSingleByChannel(HitResult, CamLoc, CamLoc + FirearmData.EffectiveRange * CamRot.Vector(), ECollisionChannel::ECC_Visibility, CollisionQueryParams))
-			{
-				Destination = HitResult.ImpactPoint;
-				UE_LOG(LogTemp, Warning, TEXT("HitActor = %s"), *HitResult.GetActor()->GetName());
-			}
-
-			DrawDebugSphere(GetWorld(), Destination, 10.0f, 10, FColor::Red, false, 5.0f);
-
 			FRotator SpawnRotation = FRotationMatrix::MakeFromX(Destination - SpawnLocation).Rotator();
 			Server_Fire(SpawnLocation, SpawnRotation);
+
 			GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &APRFirearm::Fire, FirearmData.FireRate, false);
+
 		}
 		else
 		{
 			//UE_LOG(LogTemp, Warning, TEXT("No Ammo"));
-			
 		}
 	}
 }
@@ -168,13 +162,32 @@ void APRFirearm::Server_Fire_Implementation(FVector SpawnLocation, FRotator Spaw
 	SpawnParameters.Instigator = Cast<APlayerController>(GetOwner())->GetPawn();
 	SpawnParameters.Owner = GetOwner();
 
-	//DrawDebugLine(GetWorld(), SpawnLocation, SpawnLocation + SpawnRotation.Vector() * FirearmData.EffectiveRange, FColor::Red, true, 5.0f);
-
 	if(APRBullet* Bullet = GetWorld()->SpawnActor<APRBullet>(SpawnLocation, SpawnRotation, SpawnParameters))
 	{
 		Bullet->Init(FirearmData.Damage);
 		LoadedBullets--;
+		Multicast_SpawnEffects();
 	}
+}
+
+void APRFirearm::Multicast_SpawnEffects_Implementation()
+{
+	if (FirearmData.MuzzleFire)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(FirearmData.MuzzleFire, BodyMesh, FName(TEXT("Barrel")), FVector(0.0f), FRotator(0.0f), EAttachLocation::Type::KeepRelativeOffset, true);
+	}
+}
+
+FPRItemData* APRFirearm::CheckIsBulletsInInventory()
+{
+	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetAttachParentActor()->GetComponentByClass(UPRInventoryComponent::StaticClass())))
+	{
+		if (FPRItemData* InventoryItem = InventoryComponent->GetInventoryItem(FirearmData.AmmunitionID))
+		{
+			return InventoryItem;
+		}
+	}
+	return nullptr;
 }
 
 void APRFirearm::Reload()
@@ -186,33 +199,21 @@ void APRFirearm::Server_Reload_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Server_Reload"));
 
-	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetAttachParentActor()->GetComponentByClass(UPRInventoryComponent::StaticClass())))
+	if(FPRItemData* BulletData = CheckIsBulletsInInventory())
 	{
-		if (FPRItemData* InventoryItem = InventoryComponent->GetInventoryItem(FirearmData.AmmunitionID))
-		{
-			int32 MaxBullets = InventoryItem->Amount;
-			int32 BulletsForReload = FirearmData.BulletsPerMag - LoadedBullets;
+		int32 MaxBullets = BulletData->Amount;
+		int32 BulletsForReload = FirearmData.BulletsPerMag - LoadedBullets;
 
-			if (BulletsForReload >= MaxBullets)
-			{
-				LoadedBullets += MaxBullets;
-				InventoryItem->Amount = 0;
-			}
-			else
-			{
-				LoadedBullets += BulletsForReload;
-				InventoryItem->Amount -= BulletsForReload;
-			}
-			UE_LOG(LogTemp, Warning, TEXT("LoadedBullet = %d, InventoryBullet = %d"), LoadedBullets, InventoryItem->Amount);
+		if (BulletsForReload >= MaxBullets)
+		{
+			LoadedBullets += MaxBullets;
+			BulletData->Amount = 0;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("There's no proper bullet in your inventory"));
+			LoadedBullets += BulletsForReload;
+			BulletData->Amount -= BulletsForReload;
 		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InventoryComponent is invalid"));
 	}
 }
 

@@ -25,6 +25,7 @@ void UPRInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(UPRInventoryComponent, GroundedItems);
 	DOREPLIFETIME_CONDITION(UPRInventoryComponent, InventoryItems, COND_None);
 	DOREPLIFETIME(UPRInventoryComponent, Firearms);
+	DOREPLIFETIME(UPRInventoryComponent, CurrentCapacity);
 }
 
 bool UPRInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
@@ -64,9 +65,14 @@ void UPRInventoryComponent::Server_AddItemToInventory_Implementation(APRItem* It
 {
 	if(Item)
 	{
-		if (TryAddItemToInventory(Item->ItemData))
+		FPRItemData ItemData = Item->ItemData;
+		ItemData.Index = Index;
+
+		if (TryAddItemToInventory(ItemData))
 		{
+			CurrentCapacity += ItemData.Amount * UPRItemLibrary::GetBaseData(ItemData.ID).WeightPerPiece;
 			Item->Destroy();
+			UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::Server_AddItemToInventory : Success to TryAddItemToInventory. CurrentCapacity = %f"), CurrentCapacity);
 		}
 		else
 		{
@@ -78,6 +84,15 @@ void UPRInventoryComponent::Server_AddItemToInventory_Implementation(APRItem* It
 		UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::Server_AddItemToInventory : Item or ItemDataObject is invalid."));
 	}
 }
+
+void UPRInventoryComponent::Server_AddItemToInventoryWithoutDestroy_Implementation(FPRItemData ItemData)
+{
+	if(TryAddItemToInventory(ItemData))
+	{
+		CurrentCapacity += ItemData.Amount * UPRItemLibrary::GetBaseData(ItemData.ID).WeightPerPiece;
+	}
+}
+
 
 /*
 void UPRInventoryComponent::Server_AddItemToInventoryWithoutDestroy_Implementation(UPRItemDataObject* ItemDataObject)
@@ -99,8 +114,12 @@ bool UPRInventoryComponent::TryAddItemToInventory(FPRItemData ItemDataToAdd)
 	case EPRCategory::Default:
 		return false;
 		
-	case EPRCategory::Firearm_Primary:
-	case EPRCategory::Firearm_Secondary:
+	case EPRCategory::Firearm_AssaultRifle:
+	case EPRCategory::Firearm_Shotgun:
+	case EPRCategory::Firearm_SubMachineGun:
+	case EPRCategory::Firearm_SniperRifle:
+	case EPRCategory::Firearm_Pistol:
+
 		if (SelectedIndex == INDEX_NONE)
 		{
 			SelectedIndex = GetValidFirearmSlotIndex(ItemDataToAdd.Category);
@@ -110,8 +129,13 @@ bool UPRInventoryComponent::TryAddItemToInventory(FPRItemData ItemDataToAdd)
 				return false;
 			}
 		}
+
 		if(APRCharacter* Character = Cast<APRCharacter>(GetOwner()))
 		{
+			if(APRFirearm* Firearm = Firearms[SelectedIndex])
+			{
+				Server_RemoveFromInventory(Firearm->ItemData, true);
+			}
 			Character->Server_UpdateFirearm(SelectedIndex, ItemDataToAdd);
 			return true;
 		}
@@ -152,6 +176,8 @@ void UPRInventoryComponent::Server_RemoveFromInventory_Implementation(FPRItemDat
 {
 	if (TryRemoveFromInventory(ItemDataToRemove))
 	{
+		CurrentCapacity -= ItemDataToRemove.Amount * UPRItemLibrary::GetBaseData(ItemDataToRemove.ID).WeightPerPiece;
+
 		if (bNeedToSpawn)
 		{
 			FVector SpawnLocation = GetSpawnLocation();
@@ -176,11 +202,26 @@ bool UPRInventoryComponent::TryRemoveFromInventory(FPRItemData ItemDataToRemove)
 	case EPRCategory::Default:
 		return false;
 
-	case EPRCategory::Firearm_Primary:
-	case EPRCategory::Firearm_Secondary:
-		//Firearms.
-		return false;
+	case EPRCategory::Firearm_AssaultRifle:
+	case EPRCategory::Firearm_Shotgun:
+	case EPRCategory::Firearm_SubMachineGun:
+	case EPRCategory::Firearm_SniperRifle:
+	case EPRCategory::Firearm_Pistol:
+		if(APRFirearm* FirearmToRemove = Firearms[ItemDataToRemove.Index])
+		{
+			Firearms[ItemDataToRemove.Index] = nullptr;
+			FirearmToRemove->Destroy();
 
+			if(APRCharacter* Character = Cast<APRCharacter>(GetOwner()))
+			{
+				if (FirearmToRemove == Character->GetCurrentHeldFirearm())
+				{
+					Character->SetCurrentHeldFirearm(nullptr);
+				}
+			}
+			return true;
+		}
+		return false;
 	case EPRCategory::Equipment_HeadGear:
 	case EPRCategory::Equipment_Vest:
 	case EPRCategory::Equipment_Backpack:
@@ -295,45 +336,35 @@ void UPRInventoryComponent::Server_FindGroundItems_Implementation()
 
 int32 UPRInventoryComponent::GetValidFirearmSlotIndex(EPRCategory Category)
 {
-	int32 StartIndex = 0;
-
 	switch (Category)
 	{
-	case EPRCategory::Firearm_Primary:
-	
-		if (CurrentFirearmIndex != INDEX_NONE)
+	case EPRCategory::Firearm_AssaultRifle:
+	case EPRCategory::Firearm_Shotgun:
+	case EPRCategory::Firearm_SubMachineGun:
+	case EPRCategory::Firearm_SniperRifle:
+		for (int32 Index = 0; Index <= 1; Index++)
 		{
-			if (CurrentFirearmIndex <= 1)
-			{
-				return CurrentFirearmIndex;
-			}
-			return 2;
+			// 빈 슬롯 중 인덱스가 작은 곳을 찾아서 반환
+			if (!Firearms[Index]) return Index;
 		}
-		break;
 
-	case EPRCategory::Firearm_Secondary:
-		if (CurrentFirearmIndex != INDEX_NONE)
+		if(const APRFirearm* Firearm = Cast<APRCharacter>(GetOwner())->GetCurrentHeldFirearm())
 		{
-			if (CurrentFirearmIndex > 1)
-			{
-				return CurrentFirearmIndex;
-			}
-			return 0;
+			return Firearm->ItemData.Index;
 		}
-		StartIndex += 2;
-		break;
+		return INDEX_NONE;
+	case EPRCategory::Firearm_Pistol:
+		return 2;
 
 	default:
-		break;
+		return INDEX_NONE;
 	}
+}
 
-	for (int32 Index = StartIndex; Index < StartIndex + 2; Index++)
-	{
-		// 빈 슬롯 중 인덱스가 작은 곳을 찾아서 반환
-		if (!Firearms[Index]) return Index;
-	}
-	// 모든 인덱스가 꽉 차있다면,
-	return INDEX_NONE;
+void UPRInventoryComponent::OnRep_Firearms()
+{
+	UE_LOG(LogClass, Warning, TEXT("OnRep_Firearms"));
+	OnUpdateFirearms.Broadcast(Firearms);
 }
 
 void UPRInventoryComponent::OnRep_InventoryItems()
@@ -348,6 +379,11 @@ void UPRInventoryComponent::OnRep_GroundedItems()
 	OnUpdateGroundItems.Broadcast(GroundedItems);
 }
 
+void UPRInventoryComponent::OnRep_CurrentCapacity()
+{
+	UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::OnRep_CurrentCapacity"));
+	OnUpdateCapacity.Broadcast(CurrentCapacity/MaxCapacity);
+}
 
 void UPRInventoryComponent::Client_UpdateEquipment_Implementation(EPRCategory SubCategory, UPRItemDataObject* ItemDataObject)
 {
@@ -394,4 +430,25 @@ FVector UPRInventoryComponent::GetSpawnLocation()
 		SpawnLocation = HitResult.ImpactPoint;
 	}
 	return SpawnLocation;
+}
+
+void UPRInventoryComponent::SetMaxCapacity(float NewMaxCapacity)
+{
+	MaxCapacity = NewMaxCapacity;
+	OnUpdateCapacity.Broadcast(CurrentCapacity/MaxCapacity);
+}
+
+void UPRInventoryComponent::Server_SwapFirearm_Implementation(int32 PrevIndex, int32 NewIndex)
+{
+	if(APRCharacter* Character = Cast<APRCharacter>(GetOwner()))
+	{
+		APRFirearm* TempFirearm = Firearms[NewIndex];
+
+		Firearms[NewIndex] = Firearms[PrevIndex];
+		Firearms[NewIndex]->ItemData.Index = NewIndex;
+		Firearms[PrevIndex] = TempFirearm;
+
+		Character->AttachToBack(Firearms[PrevIndex]);
+		Character->AttachToBack(Firearms[NewIndex]);
+	}
 }

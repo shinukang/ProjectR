@@ -12,6 +12,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnFirearmInitialized)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnUpdateAttachment, int32, EPRCategory, FName);
+DECLARE_DELEGATE_ThreeParams(FOnFire, float, float, float);
 /**
  * 
  */
@@ -36,6 +37,8 @@ public:
 	void Fire();
 
 	void Reload();
+
+	FPRItemData* CheckIsBulletsInInventory();
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetScope(FName ID);
@@ -86,6 +89,8 @@ public:
 
 	FOnUpdateAttachment OnUpdateAttachment;
 
+	FOnFire OnFire;
+
 	bool bUseGrip;
 
 	bool bIsFiring = false;
@@ -109,6 +114,9 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void Server_Reload();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnEffects();
 
 	FTimerHandle FireTimerHandle;
 	//void SetFireMode();

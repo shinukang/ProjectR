@@ -32,9 +32,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PR|HeldObject")
 	void ClearHeldObject();
 
+	/*
 	UFUNCTION(BlueprintCallable, Category = "PR|HeldObject")
 	void AttachToHand(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSkeletalMesh,
 	                  class UClass* NewAnimClass, bool bLeftHand, FVector Offset);
+	*/
 
 	virtual void RagdollStart() override;
 
@@ -79,11 +81,19 @@ public:
 
 	APRFirearm* GetCurrentHeldFirearm() { return CurrentHeldFirearm;  }
 
+	void SetCurrentHeldFirearm(APRFirearm* NewFirearm);
+
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_UpdateCostume(const TArray<FPRCostume>& Costumes);
 
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateLiveCharacter(const TArray<FPRCostume>& Costumes);
+
+	void AttachToHand();
+
+	void AttachToBack(APRFirearm* NewFirearm);
+
+	void Die();
 
 protected:
 	virtual void Tick(float DeltaTime) override;
@@ -92,17 +102,13 @@ protected:
 
 	virtual void OnOverlayStateChanged(EPROverlayState PreviousState) override;
 
-	//virtual void BecomeViewTarget(APlayerController* PC) override;
-
-	//virtual void EndViewTarget(APlayerController* PC) override;
-
-	void AttachToHand(APRFirearm* Firearm);
-
-	void AttachToBack(APRFirearm* Firearm);
 
 	/** Implement on BP to update animation states of held objects */
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "PR|HeldObject")
 	void UpdateHeldObjectAnimations();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "PR|HeldObject")
+	void MergeCharacterMesh();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
@@ -113,6 +119,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
 	TObjectPtr<UStaticMeshComponent> StaticMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
+	TObjectPtr<USceneComponent> BodyParts = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
+	TObjectPtr<USkeletalMeshComponent> Head = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
 	TObjectPtr<USkeletalMeshComponent> Top = nullptr;
@@ -144,7 +156,7 @@ public:
 	TObjectPtr<UPRStatusComponent> PRStatusComponent = nullptr;
 
 	UFUNCTION()
-	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	void TakePointDamage(AActor* DamagedActor, float Damage, AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType* DamageType, AActor* DamageCauser);
 
 	FOnUpdateBulletType OnUpdateBullet;
 
@@ -155,4 +167,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_CurrentHeldFirearm, meta=(AllowPrivateAccess=true))
 	TObjectPtr<APRFirearm> CurrentHeldFirearm = nullptr;
+
+	
 };

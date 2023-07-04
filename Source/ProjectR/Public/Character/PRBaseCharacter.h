@@ -119,6 +119,15 @@ public:
 		void SetOverlayState(EPROverlayState NewState, bool bForce = false);
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
+		void SetNeedToResetOverlayState(bool bNeedToReset);
+
+	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
+		void SetIsReloading(bool bIsReload);
+
+	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
+		void SetIsEquipping(bool bIsEquip);
+
+	UFUNCTION(BlueprintCallable, Category = "PR|Character States")
 		void SetGroundedEntryState(EPRGroundedEntryState NewState);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "PR|Character States")
@@ -126,6 +135,15 @@ public:
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
 		EPROverlayState GetOverlayState() const { return OverlayState; }
+
+	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
+		bool GetNeedToResetOverlayState() const { return bNeedToResetOverlayState;  }
+
+	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
+		bool GetIsReloading() const { return bIsReloading; }
+
+	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
+		bool GetIsEquipping() const { return bIsEquipping; }
 
 	UFUNCTION(BlueprintGetter, Category = "PR|Character States")
 		EPRGroundedEntryState GetGroundedEntryState() const { return GroundedEntryState; }
@@ -505,6 +523,15 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PR|State Values", ReplicatedUsing = OnRep_OverlayState)
 		EPROverlayState OverlayState = EPROverlayState::Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PR|State Values")
+		bool bNeedToResetOverlayState = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PR|State Values")
+		bool bIsReloading = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PR|State Values")
+		bool bIsEquipping = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PR|State Values")
 		EPRGroundedEntryState GroundedEntryState;

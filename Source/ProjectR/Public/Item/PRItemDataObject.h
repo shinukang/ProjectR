@@ -44,4 +44,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UseItem(APlayerController* PlayerController);
 
+	UFUNCTION(BlueprintCallable)
+	void SwapFirearm(APlayerController* PlayerController, int32 NewIndex);
+
 };

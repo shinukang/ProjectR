@@ -402,6 +402,22 @@ void APRBaseCharacter::SetOverlayState(const EPROverlayState NewState, bool bFor
 	}
 }
 
+void APRBaseCharacter::SetNeedToResetOverlayState(bool bNeedToReset)
+{
+	bNeedToResetOverlayState = bNeedToReset;
+}
+
+void APRBaseCharacter::SetIsReloading(bool bIsReload)
+{
+	bIsReloading = bIsReload;
+}
+
+void APRBaseCharacter::SetIsEquipping(bool bIsEquip)
+{
+	bIsEquipping= bIsEquip;
+}
+
+
 void APRBaseCharacter::SetGroundedEntryState(EPRGroundedEntryState NewState)
 {
 	GroundedEntryState = NewState;

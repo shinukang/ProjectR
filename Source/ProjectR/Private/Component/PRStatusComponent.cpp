@@ -3,6 +3,7 @@
 
 #include "Component/PRStatusComponent.h"
 
+#include "Character/PRCharacter.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
@@ -48,13 +49,16 @@ void UPRStatusComponent::OnHealthPointUpdate()
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, HealthMessage);
 	}
 
-	if(Cast<APawn>(GetOwner())->IsLocallyControlled())
+	if(APRCharacter* Character = Cast<APRCharacter>(GetOwner()))
 	{
-		OnUpdateHealthPoint.Execute(HealthPoint);
+		if(Character->IsLocallyControlled())
+		{
+			OnUpdateHealthPoint.Execute(HealthPoint);
+		}
+
 		if (HealthPoint <= 0.0f)
 		{
-			FString DeathMessage = FString::Printf(TEXT("You have been killed."));
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, DeathMessage);
+			Character->Die();
 		}
 	}
 }
@@ -180,16 +184,20 @@ void UPRStatusComponent::Client_SetStaminaBuffTimer_Implementation(float Efficie
 
 	IncrementOfStamina *= Efficiency;
 	DecrementOfStamina /= Efficiency;
-	UE_LOG(LogClass, Warning, TEXT("UPRStatusComponent::Client_SetStaminaBuffTimer : Buff Start."));
 
 	TimerManager.SetTimer(TimerHandle, FTimerDelegate::CreateLambda([=]()
 	{
 		IncrementOfStamina /= Efficiency;
 		DecrementOfStamina *= Efficiency;
-		UE_LOG(LogClass, Warning, TEXT("UPRStatusComponent::Client_SetStaminaBuffTimer : Buff End. IOS = %f, DOS = %f"), IncrementOfStamina, DecrementOfStamina);
 	}), 30.0f, false, 30.0f);
 }
 
+void UPRStatusComponent::SetHeadArmor(float NewHeadArmor)
+{
+	HeadArmor = NewHeadArmor;
+}
 
-
-
+void UPRStatusComponent::SetBodyArmor(float NewBodyArmor)
+{
+	BodyArmor = NewBodyArmor;
+}

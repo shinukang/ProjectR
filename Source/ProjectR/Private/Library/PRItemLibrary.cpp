@@ -34,8 +34,11 @@ UDataTable* UPRItemLibrary::GetItemDataTable(EPRCategory Category)
 	case EPRCategory::Default:
 		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, ItemTablePath));
 
-	case EPRCategory::Firearm_Primary:
-	case EPRCategory::Firearm_Secondary:
+	case EPRCategory::Firearm_AssaultRifle:
+	case EPRCategory::Firearm_Shotgun:
+	case EPRCategory::Firearm_SubMachineGun:
+	case EPRCategory::Firearm_SniperRifle:
+	case EPRCategory::Firearm_Pistol:
 		return Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, FirearmTablePath));
 
 	case EPRCategory::Attachment_Barrel:

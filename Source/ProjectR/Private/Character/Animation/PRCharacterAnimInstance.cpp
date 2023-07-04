@@ -87,6 +87,7 @@ void UPRCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	RotationMode = Character->GetRotationMode();
 	Gait = Character->GetGait();
 	OverlayState = Character->GetOverlayState();
+	bNeedToResetOverlayState = Character->GetNeedToResetOverlayState();
 	GroundedEntryState = Character->GetGroundedEntryState();
 
 	UpdateAimingValues(DeltaSeconds);
@@ -935,4 +936,24 @@ void UPRCharacterAnimInstance::OnPivot()
 	Grounded.bPivot = CharacterInformation.Speed < Config.TriggerPivotSpeedLimit;
 	GetWorld()->GetTimerManager().SetTimer(OnPivotTimer, this,
 	                                  &UPRCharacterAnimInstance::OnPivotDelay, 0.1f, false);
+}
+
+void UPRCharacterAnimInstance::SetRecoilAnimParams(float Duration, float NewRecoilStrength, float NewRecoilHandsAnimStrength)
+{
+	const float PrevRecoilStrength = NewRecoilStrength;
+	const float PrevRecoilHandsAnimStrength = NewRecoilHandsAnimStrength;
+
+	bNeedToAddRecoilImpulse = true;
+	RecoilStrength = NewRecoilStrength;
+	RecoilHandsAnimStrength = NewRecoilHandsAnimStrength;
+
+	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+	FTimerHandle TimerHandle;
+
+	TimerManager.SetTimer(TimerHandle, FTimerDelegate::CreateLambda([=]()
+	{
+		bNeedToAddRecoilImpulse = false;
+		RecoilStrength = PrevRecoilStrength;
+		RecoilHandsAnimStrength = PrevRecoilHandsAnimStrength;
+	}), Duration, false, Duration);
 }
