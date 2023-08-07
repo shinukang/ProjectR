@@ -13,7 +13,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Library/RyanLibrary.h"
 #include "System/PRLiveCharacterSpawnPoint.h"
-#include "System/PRLobbyPawn.h"
+#include "System/PRLiveCharacter.h"
 #include "System/PRPlayerState.h"
 
 void APRPlayerController::BeginPlay()
@@ -39,7 +39,7 @@ void APRPlayerController::Init()
 				FActorSpawnParameters ActorSpawnParameters;
 				ActorSpawnParameters.Owner = this;
 
-				if (APRLobbyPawn* NewLiveCharacter = GetWorld()->SpawnActor<APRLobbyPawn>(LiveCharacterSpawnPoint->GetActorLocation(), LiveCharacterSpawnPoint->GetActorRotation(), ActorSpawnParameters))
+				if (APRLiveCharacter* NewLiveCharacter = GetWorld()->SpawnActor<APRLiveCharacter>(LiveCharacterSpawnPoint->GetActorLocation(), LiveCharacterSpawnPoint->GetActorRotation(), ActorSpawnParameters))
 				{
 					LiveCharacter = NewLiveCharacter;
 					LiveCharacter->InitLiveCharacter(HUD);
@@ -73,7 +73,7 @@ void APRPlayerController::Init()
 
 			if(LiveCharacter)
 			{
-				InventoryComponent->OnUpdateEquipment.AddUObject(LiveCharacter, &APRLobbyPawn::UpdateEquipment);
+				InventoryComponent->OnUpdateEquipment.AddUObject(LiveCharacter, &APRLiveCharacter::UpdateEquipment);
 			}
 		}
 
@@ -82,7 +82,9 @@ void APRPlayerController::Init()
 			OnControllerInitialized.AddUObject(StatusComponent, &UPRStatusComponent::OnControllerInitialized);
 
 			StatusComponent->OnUpdateHealthPoint.BindUObject(HUD, &UPRWidgetBase::UpdateHealthPointBar);
+			StatusComponent->OnUpdateHealthPointRecovery.AddUObject(HUD, &UPRWidgetBase::UpdateHealthPointRecoveryTimer);
 			StatusComponent->OnUpdateStamina.BindUObject(HUD, &UPRWidgetBase::UpdateStaminaBar);
+			StatusComponent->OnUpdateStaminaBuff.BindUObject(HUD, &UPRWidgetBase::UpdateStaminaBuffTimer);
 		}
 
 		if (UPRDebugComponent* DebugComponent = Cast<UPRDebugComponent>(GetPawn()->GetComponentByClass(UPRDebugComponent::StaticClass())))
@@ -241,7 +243,16 @@ void APRPlayerController::IA_Interact_Implementation(const FInputActionValue& Va
 void APRPlayerController::IA_Inventory_Implementation(const FInputActionValue& Value)
 {
 	const bool InWidget = Value.Get<bool>();
-	HUD->SetInventoryVisibility(InWidget);
+
+	if(InWidget)
+	{
+		HUD->SetWidgetMode(EPRWidgetMode::Inventory);
+	}
+	else
+	{
+		HUD->SetWidgetMode(EPRWidgetMode::Default);
+	}
+
 	PossessedCharacter->PRInventoryComponent->bIsInventoryOpen = InWidget;
 }
 
@@ -261,4 +272,24 @@ void APRPlayerController::IA_ADS_Implementation(const FInputActionValue& Value)
 	PossessedCharacter->OnADS(Value);
 }
 
+void APRPlayerController::IA_Zoom_Implementation(const FInputActionValue& Value)
+{
+	PossessedCharacter->OnZoom(Value);
+}
+
+void APRPlayerController::IA_Exit_Implementation(const FInputActionValue& Value)
+{
+	switch (HUD->GetWidgetMode())
+	{
+	case EPRWidgetMode::Default:
+	case EPRWidgetMode::Inventory:
+		HUD->SetWidgetMode(EPRWidgetMode::Exit);
+		break;
+
+	case EPRWidgetMode::Exit:
+		HUD->SetWidgetMode(EPRWidgetMode::Default);
+		break;
+	}
+	
+}
 

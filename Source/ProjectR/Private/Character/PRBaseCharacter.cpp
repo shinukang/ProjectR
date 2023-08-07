@@ -314,7 +314,8 @@ void APRBaseCharacter::SetDesiredGait(const EPRGait NewGait)
 			switch (DesiredGait)
 			{
 			case EPRGait::Sprinting:
-				StatusComponent->DecreaseStamina();
+				if(IsMoving())
+					StatusComponent->DecreaseStamina();
 				break;
 
 			case EPRGait::Running:

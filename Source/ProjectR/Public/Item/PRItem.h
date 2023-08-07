@@ -26,7 +26,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	//UFUNCTION(BlueprintCallable)
-	//void Init(UPRItemDataObject* NewItemDataObject);
+	void Init();
 
 	UFUNCTION(BlueprintCallable)
 	void Init(FPRItemData NewItemData);
@@ -40,10 +40,13 @@ private:
 	void OnRep_ItemData();
 
 public:
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_ItemDataObject)
-	//TObjectPtr<UPRItemDataObject> ItemDataObject = nullptr;
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite)
+	FName ID = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_ItemData)
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite)
+	int32 Amount = 1;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = OnRep_ItemData)
 	FPRItemData ItemData;
 
 protected:

@@ -6,7 +6,7 @@
 #include "Component/PRStatusComponent.h"
 #include "Item/PRItemDataObject.h"
 #include "Item/PRFirearm.h"
-#include "System/PRLobbyPawn.h"
+#include "System/PRLiveCharacter.h"
 #include "PRCharacter.generated.h"
 
 /**
@@ -79,6 +79,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
 	void OnADS(const FInputActionValue& Value);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "PR|Input")
+	void OnZoom(const FInputActionValue& Value);
+
 	APRFirearm* GetCurrentHeldFirearm() { return CurrentHeldFirearm;  }
 
 	void SetCurrentHeldFirearm(APRFirearm* NewFirearm);
@@ -89,7 +92,7 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateLiveCharacter(const TArray<FPRCostume>& Costumes);
 
-	void AttachToHand();
+	void AttachToHand(bool bRight = true);
 
 	void AttachToBack(APRFirearm* NewFirearm);
 
@@ -107,9 +110,6 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "PR|HeldObject")
 	void UpdateHeldObjectAnimations();
 
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "PR|HeldObject")
-	void MergeCharacterMesh();
-
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
 	TObjectPtr<USceneComponent> HeldObjectRoot = nullptr;
@@ -123,8 +123,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
 	TObjectPtr<USceneComponent> BodyParts = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
-	TObjectPtr<USkeletalMeshComponent> Head = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
 	TObjectPtr<USkeletalMeshComponent> Top = nullptr;
@@ -149,6 +147,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
 	TObjectPtr<USkeletalMeshComponent> Backpack = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PR|Component")
+	TObjectPtr<USphereComponent> SphereCollision = nullptr;
+
 	UPROPERTY()
 	TObjectPtr<UPRInventoryComponent> PRInventoryComponent = nullptr;
 

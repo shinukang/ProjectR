@@ -6,7 +6,7 @@
 #include "Interface/PRInteractInterface.h"
 #include "Component/PRStatusComponent.h"
 #include "Component/PRInventoryComponent.h"
-#include "System/PRLobbyPawn.h"
+#include "System/PRLiveCharacter.h"
 #include "Widget/PRWidgetBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "PRPlayerController.generated.h"
@@ -108,6 +108,12 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
 	void IA_ADS(const FInputActionValue& Value);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_Zoom(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Input")
+	void IA_Exit(const FInputActionValue& Value);
+
 public:
 	/** Main character reference */
 	UPROPERTY(BlueprintReadOnly, Category = "PR")
@@ -115,7 +121,7 @@ public:
 
 	/** Inventory live character reference */
 	UPROPERTY(BlueprintReadOnly, Category = "PR")
-	TObjectPtr<APRLobbyPawn> LiveCharacter = nullptr;
+	TObjectPtr<APRLiveCharacter> LiveCharacter = nullptr;
 
 	/* HUD reference */
 	FOnControllerInitialized OnControllerInitialized;

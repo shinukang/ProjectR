@@ -8,6 +8,7 @@
 #include "Library/PRItemLibrary.h"
 #include "Item/PRItemDataObject.h"
 #include "Item/PRScope.h"
+#include "Item/PRBullet.h"
 #include "PRFirearm.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnFirearmInitialized)
@@ -37,6 +38,13 @@ public:
 	void Fire();
 
 	void Reload();
+
+	void Zoom(bool bIn);
+
+	void ApplyDamage(FHitResult HitResult);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ApplyDamage(FHitResult HitResult);
 
 	FPRItemData* CheckIsBulletsInInventory();
 
@@ -100,6 +108,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	int32 LoadedBullets = 0;
 
+	UPROPERTY()
+	TSubclassOf<UCameraShakeBase> CameraShake_Fire;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<APRBullet> BulletClass;
+
 protected:
 	UFUNCTION()
 	void OnRep_ItemData();
@@ -110,7 +124,7 @@ protected:
 private:
 
 	UFUNCTION(Server, Reliable)
-	void Server_Fire(FVector SpawnLocation, FRotator SpawnRotation);
+	void Server_Fire(FVector SpawnLocation, FRotator SpawnRotation, FHitResult TargetHitResult);
 
 	UFUNCTION(Server, Reliable)
 	void Server_Reload();
@@ -120,4 +134,10 @@ private:
 
 	FTimerHandle FireTimerHandle;
 	//void SetFireMode();
+
+	UPROPERTY()
+	UDataTable* BallisticDataTable = nullptr;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* ScopeMaterial = nullptr;
 };

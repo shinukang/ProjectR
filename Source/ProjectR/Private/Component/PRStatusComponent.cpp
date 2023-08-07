@@ -43,12 +43,6 @@ void UPRStatusComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 void UPRStatusComponent::OnHealthPointUpdate()
 {
-	if(GetOwner()->GetLocalRole() == ROLE_Authority)
-	{
-		FString HealthMessage = FString::Printf(TEXT("%s now has %f health remaining."), *GetOwner()->GetName(), HealthPoint);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, HealthMessage);
-	}
-
 	if(APRCharacter* Character = Cast<APRCharacter>(GetOwner()))
 	{
 		if(Character->IsLocallyControlled())
@@ -65,15 +59,12 @@ void UPRStatusComponent::OnHealthPointUpdate()
 
 void UPRStatusComponent::OnRep_HealthPoint()
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_HealthPoint"));
 	OnHealthPointUpdate();
 }
 
 
 void UPRStatusComponent::SetHealthPoint(float NewValue)
 {
-	UE_LOG(LogClass, Warning, TEXT("UPRStatusComponent::SetHealthPoint : NewValue = %f"), NewValue);
-
 	HealthPoint = FMath::Clamp(NewValue, 0.0f, 1.0f);
 
 	if(GetOwner()->GetLocalRole() == ROLE_Authority)
@@ -107,14 +98,15 @@ void UPRStatusComponent::IncreaseStamina()
 		TimerManager.ClearTimer(DecreaseStaminaHandle);
 	}
 
-	TimerManager.SetTimer(IncreaseStaminaHandle, FTimerDelegate::CreateLambda([&]()
+	if (Stamina >= 1.0f)
 	{
-		if(Stamina >= 1.0f)
-		{
-			TimerManager.ClearTimer(IncreaseStaminaHandle);
-		}
+		TimerManager.ClearTimer(IncreaseStaminaHandle);
+	}
+	else
+	{
 		UpdateStamina(IncrementOfStamina);
-	}), IncrementalCycleOfStamina, true, WaitingTimeBeforeIncreasingStamina);
+		TimerManager.SetTimer(IncreaseStaminaHandle, this, &UPRStatusComponent::IncreaseStamina, IncrementalCycleOfStamina, false);
+	}
 }
 
 void UPRStatusComponent::DecreaseStamina()
@@ -126,28 +118,38 @@ void UPRStatusComponent::DecreaseStamina()
 		TimerManager.ClearTimer(IncreaseStaminaHandle);
 	}
 
-	TimerManager.SetTimer(DecreaseStaminaHandle, FTimerDelegate::CreateLambda([&]()
+	if (Stamina <= 0.0f)
 	{
-		if (Stamina <= 0.0f) 
+		if (OnStaminaExhausted.ExecuteIfBound(EPRGait::Running))
 		{
-			OnStaminaExhausted.ExecuteIfBound(EPRGait::Running);
-			UE_LOG(LogClass, Warning, TEXT("UPRStatusComponent::Stamina exhausted."));
-			TimerManager.ClearTimer(DecreaseStaminaHandle);
+			if (DecreaseStaminaHandle.IsValid())
+			{
+				TimerManager.ClearTimer(DecreaseStaminaHandle);
+			}
 		}
+	}
+	else
+	{
 		UpdateStamina(DecrementOfStamina);
-	}), DecrementalCycleOfStamina, true);
+		TimerManager.SetTimer(DecreaseStaminaHandle, this, &UPRStatusComponent::DecreaseStamina, DecrementalCycleOfStamina, false);
+	}
 }
 
 void UPRStatusComponent::IncreaseHealthPoint(float Amount)
 {
 	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 
+	if(RepeatCount == 0)
+	{
+		Client_SetHealthPointRecoveryTimer(true);
+	}
 	UpdateHealthPoint(Amount / 10.0f);
 	RepeatCount++;
 
 	if(HealthPoint >= 1.0f || RepeatCount >= 10)
 	{
 		RepeatCount = 0;
+		Client_SetHealthPointRecoveryTimer(false);
 	}
 	else
 	{
@@ -163,7 +165,6 @@ void UPRStatusComponent::Server_UseMedicine_Implementation(FPRItemData ItemData)
 		switch (ItemData.Category)
 		{
 		case EPRCategory::Medicine_HealthPoint:
-			UE_LOG(LogClass, Warning, TEXT("UPRStatusComponent::UseMedicine : HealthPoint."));
 			IncreaseHealthPoint(MedicineData->Efficiency);
 			break;
 
@@ -171,8 +172,6 @@ void UPRStatusComponent::Server_UseMedicine_Implementation(FPRItemData ItemData)
 			Client_SetStaminaBuffTimer(MedicineData->Efficiency);
 			break;
 		default:
-			UE_LOG(LogClass, Warning, TEXT("UPRStatusComponent::UseMedicine : Default."));
-
 			break;
 		}
 	}
@@ -184,12 +183,19 @@ void UPRStatusComponent::Client_SetStaminaBuffTimer_Implementation(float Efficie
 
 	IncrementOfStamina *= Efficiency;
 	DecrementOfStamina /= Efficiency;
+	OnUpdateStaminaBuff.Execute(true);
 
 	TimerManager.SetTimer(TimerHandle, FTimerDelegate::CreateLambda([=]()
 	{
 		IncrementOfStamina /= Efficiency;
 		DecrementOfStamina *= Efficiency;
+		OnUpdateStaminaBuff.Execute(false);
 	}), 30.0f, false, 30.0f);
+}
+
+void UPRStatusComponent::Client_SetHealthPointRecoveryTimer_Implementation(bool bStart)
+{
+	OnUpdateHealthPointRecovery.Broadcast(bStart);
 }
 
 void UPRStatusComponent::SetHeadArmor(float NewHeadArmor)

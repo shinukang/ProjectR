@@ -3,6 +3,7 @@
 #include "PRCharacterEnumLibrary.h"
 #include "Engine/DataTable.h"
 #include "NiagaraSystem.h"
+#include "Sound/SoundCue.h"
 #include "PRItemLibrary.generated.h"
 
 /* Enums for Items */
@@ -48,6 +49,19 @@ enum class EPRAmmunition : uint8
 };
 
 /* Structures for Items */
+
+USTRUCT(BlueprintType)
+struct FPRBallisticFX : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Particle")
+	UParticleSystem* VFX_Ballistic;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Decal")
+	USoundCue* SFX_Ballistic;
+};
+
 USTRUCT(BlueprintType)
 struct FPRAttachmentSlotSetting
 {
@@ -118,13 +132,12 @@ struct FPRBaseData : public FTableRowBase
 
 	bool operator==(const FPRBaseData& Other) const
 	{
-
-	return Equals(Other);
+		return Equals(Other);
 	}
 
 	bool Equals(const FPRBaseData& Other) const
 	{
-	return this->Name.EqualTo(Other.Name);
+		return this->Name.EqualTo(Other.Name);
 	}
 	
 };
@@ -165,10 +178,10 @@ struct FPRFirearmData : public FPRAdvancedData
 	float FireRate = 0.1f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
-	float RecoilStrength = 1.0f;
+	float SpreadRate = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
-	float RecoilHandsAnimStrength = 0.0f;
+	float RecoilRate = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float EffectiveRange = 50000.0f;
@@ -188,19 +201,44 @@ struct FPRFirearmData : public FPRAdvancedData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	bool bNeedBaseScope = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
-	UNiagaraSystem* MuzzleFire = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
+	bool bSuppressorAttached = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
-	UNiagaraSystem* MuzzleFire_Brake = nullptr;
+	UParticleSystem* VFX_Fire = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	UParticleSystem* VFX_Fire_Brake = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	UNiagaraSystem* VFX_Ejection = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	USoundCue* SFX_Fire = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	USoundCue* SFX_Fire_Suppressed = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	USoundCue* SFX_Dry = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	USoundCue* SFX_Reload_MagOut = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	USoundCue* SFX_Reload_MagIn = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	USoundCue* SFX_Reload_Cock = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
+	USoundCue* SFX_Holster = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
 	UAnimSequence* PoseSequence = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
 	UAnimMontage* ReloadMontage = nullptr;
-
-	
 
 	FPRFirearmData()
 	{
@@ -215,16 +253,27 @@ struct FPRFirearmData : public FPRAdvancedData
 		this->Damage = StructRef->Damage;
 		this->BulletsPerMag = StructRef->BulletsPerMag;
 		this->FireRate = StructRef->FireRate;
-		this->RecoilStrength = StructRef->RecoilStrength;
-		this->RecoilHandsAnimStrength = StructRef->RecoilHandsAnimStrength;
+		this->SpreadRate = StructRef->SpreadRate;
+		this->RecoilRate = StructRef->RecoilRate;
 		this->AttachmentSlotSettings = StructRef->AttachmentSlotSettings;
-		this->MuzzleFire = StructRef->MuzzleFire;
-		this->MuzzleFire_Brake = StructRef->MuzzleFire_Brake;
+
+		this->VFX_Fire = StructRef->VFX_Fire;
+		this->VFX_Fire_Brake = StructRef->VFX_Fire_Brake;
+		this->VFX_Ejection = StructRef->VFX_Ejection;
+
+		this->SFX_Fire = StructRef->SFX_Fire;
+		this->SFX_Fire_Suppressed = StructRef->SFX_Fire_Suppressed;
+		this->SFX_Dry = StructRef->SFX_Dry;
+		this->SFX_Reload_MagOut = StructRef->SFX_Reload_MagOut;
+		this->SFX_Reload_MagIn = StructRef->SFX_Reload_MagIn;
+		this->SFX_Reload_Cock = StructRef->SFX_Reload_Cock;
+		this->SFX_Holster = StructRef->SFX_Holster;
 		
 		this->HolsterOffset = StructRef->HolsterOffset;
 		this->OverlayState = StructRef->OverlayState;
 		this->AmmunitionID = StructRef->AmmunitionID;
 		this->bNeedBaseScope = StructRef->bNeedBaseScope;
+		this->bSuppressorAttached = StructRef->bSuppressorAttached;
 		this->PoseSequence = StructRef->PoseSequence;
 		this->ReloadMontage = StructRef->ReloadMontage;
 	}
@@ -238,6 +287,9 @@ struct FPRAttachmentData : public FPRAdvancedData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<UStaticMesh> BodyMesh = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tag")
+	TArray<FString> Tags;
+
 	FPRAttachmentData()
 	{
 
@@ -246,6 +298,7 @@ struct FPRAttachmentData : public FPRAdvancedData
 	FPRAttachmentData(const FPRAttachmentData* StructRef)
 	{
 		this->BodyMesh = StructRef->BodyMesh;
+		this->Tags = StructRef->Tags;
 	}
 };
 

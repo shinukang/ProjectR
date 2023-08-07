@@ -7,12 +7,6 @@
 #include "Library/PRCharacterStructLibrary.h"
 #include "PRGameInstance.generated.h"
 
-/**
- * 
- */
-
-//DECLARE_MULTICAST_DELEGATE_OneParam(FOnCostumeChanged, FPRCostume);
-
 UCLASS()
 class PROJECTR_API UPRGameInstance : public UGameInstance
 {

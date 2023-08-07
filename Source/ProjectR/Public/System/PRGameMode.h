@@ -15,12 +15,11 @@ class PROJECTR_API APRGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
+public:
 	virtual void BeginPlay() override;
 
-	virtual void OnPostLogin(AController* NewPlayer) override;
+private:
 
 	UFUNCTION(Server, Reliable)
-	void Server_SpawnItems();
-
-
+	void Server_InitItems();
 };

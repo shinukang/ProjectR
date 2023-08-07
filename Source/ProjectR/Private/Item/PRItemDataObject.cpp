@@ -62,23 +62,6 @@ void UPRItemDataObject::RemoveItemFromInventory(APlayerController* PlayerControl
 	{
 		if (APRCharacter* Character = Cast<APRCharacter>(PlayerController->GetPawn()))
 		{
-			if (APRFirearm* Firearm = Cast<APRFirearm>(GetOuter()))
-			{
-				TArray<EPRCategory> Attachments;
-
-				Firearm->Attachments.GetKeys(Attachments);
-
-				for (EPRCategory Category : Attachments)
-				{
-					Firearm->Server_RemoveAttachment(Category, false);
-				}
-
-				if(Firearm->LoadedBullets > 0)
-				{
-					Character->PRInventoryComponent->Server_AddItemToInventoryWithoutDestroy(FPRItemData(Firearm->FirearmData.AmmunitionID, Firearm->LoadedBullets));
-				}
-			}
-					
 			Character->PRInventoryComponent->Server_RemoveFromInventory(ItemData, bNeedToSpawn);
 		}
 	}
@@ -89,6 +72,11 @@ void UPRItemDataObject::RemoveAttachmentFromFirearm(APlayerController* PlayerCon
 	{
 		if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(PlayerController->GetPawn()->GetComponentByClass(UPRInventoryComponent::StaticClass())))
 		{
+			if(ItemData.Index == INDEX_NONE)
+			{
+				return;	
+			}
+
 			if (APRFirearm* FirearmToAttachItem = InventoryComponent->Firearms[ItemData.Index])
 			{
 				FirearmToAttachItem->Server_RemoveAttachment(ItemData.Category, bNeedToSpawn);

@@ -10,7 +10,9 @@
 
 DECLARE_DELEGATE_OneParam(FOnStaminaExhausted, EPRGait);
 DECLARE_DELEGATE_OneParam(FOnUpdateStamina, float);
+DECLARE_DELEGATE_OneParam(FOnUpdateStaminaBuff, bool);
 DECLARE_DELEGATE_OneParam(FOnUpdateHealthPoint, float);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateHealthPointRecovery, bool);
 
 UCLASS(BlueprintType, Blueprintable)
 class PROJECTR_API UPRStatusComponent : public UPRBaseComponent
@@ -43,6 +45,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetStaminaBuffTimer(float Efficiency);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetHealthPointRecoveryTimer(bool bStart);
 
 	void IncreaseHealthPoint(float Amount);
 
@@ -82,7 +87,11 @@ public:
 
 	FOnUpdateHealthPoint OnUpdateHealthPoint;
 
+	FOnUpdateHealthPointRecovery OnUpdateHealthPointRecovery;
+
 	FOnUpdateStamina OnUpdateStamina;
+
+	FOnUpdateStaminaBuff OnUpdateStaminaBuff;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Setting|Stamina")
@@ -90,9 +99,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting|Stamina")
 	float IncrementalCycleOfStamina = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting|Stamina")
-	float WaitingTimeBeforeIncreasingStamina = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting|Stamina")
 	float DecrementOfStamina = 0.0f;

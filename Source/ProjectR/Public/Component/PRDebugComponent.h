@@ -58,7 +58,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
 	bool GetShowTraces() { return bShowTraces; }
-
+	
 	UFUNCTION(BlueprintCallable, Category = "PR|Debug")
 	bool GetShowDebugShapes() { return bShowDebugShapes; }
 

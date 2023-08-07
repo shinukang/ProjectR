@@ -36,9 +36,21 @@ void APRItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APRItem, ItemData);
 }
 
+void APRItem::Init()
+{
+	Init(FPRItemData(ID, Amount));
+}
+
 void APRItem::Init(FPRItemData NewItemData)
 {
 	ItemData = NewItemData;
+
+	const FPRBaseData BaseData = UPRItemLibrary::GetBaseData(ItemData.ID);
+
+	Mesh->SetStaticMesh(BaseData.Mesh);
+	Mesh->SetRelativeTransform(BaseData.MeshTransform);
+	Collision->SetCapsuleHalfHeight(BaseData.CollisionHalfHeight);
+	Collision->SetCapsuleRadius(BaseData.CollisionRadius);
 }
 
 void APRItem::OnRep_ItemData()
@@ -46,10 +58,10 @@ void APRItem::OnRep_ItemData()
 	const FPRBaseData BaseData = UPRItemLibrary::GetBaseData(ItemData.ID);
 
 	Mesh->SetStaticMesh(BaseData.Mesh);
+	Mesh->SetRelativeTransform(BaseData.MeshTransform);
 	Collision->SetCapsuleHalfHeight(BaseData.CollisionHalfHeight);
 	Collision->SetCapsuleRadius(BaseData.CollisionRadius);
 }
-
 
 /*
 void APRItem::Init(UPRItemDataObject* NewItemDataObject)

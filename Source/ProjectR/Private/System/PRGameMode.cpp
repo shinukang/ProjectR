@@ -11,79 +11,21 @@
 
 void APRGameMode::BeginPlay()
 {
-	Server_SpawnItems();
+	Server_InitItems();
 }
 
-void APRGameMode::OnPostLogin(AController* NewPlayer)
-{
-	/*
-	UE_LOG(LogTemp, Warning, TEXT("APRGameMode::OnPostLogin : NewPlayer = %s, ID = %d"), *NewPlayer->GetPlayerState<APlayerState>()->GetPlayerName(), NewPlayer->GetPlayerState<APlayerState>()->GetPlayerId());
-
-	if (APRPlayerState* PRPlayerState = NewPlayer->GetPlayerState<APRPlayerState>())
-	{
-		PRPlayerState->LoadCostume();
-	}
-	else
-	{
-		if (APlayerState* NewPlayerState = NewPlayer->GetPlayerState<APlayerState>())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState is valid. %s"), *NewPlayerState->GetName());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState is invalid."));
-		}
-	}
-	*/
-}
-
-void APRGameMode::Server_SpawnItems_Implementation()
+void APRGameMode::Server_InitItems_Implementation()
 {
 	TArray<AActor*> Actors;
 
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APRSpawner::StaticClass(), Actors);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APRItem::StaticClass(), Actors);
 
 	for(AActor* Actor : Actors)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Spawner : %s"), *Actor->GetName());
-
-		if(APRSpawner* Spawner = Cast<APRSpawner>(Actor))
+		if (APRItem* PRItem = Cast<APRItem>(Actor))
 		{
-			int Count = 1;
-
-			FVector SpawnLocation = Actor->GetActorLocation();
-			FRotator SpawnRotation = FRotator::ZeroRotator;
-
-			for(FPRItemSpawnSetting ItemSpawnSetting : Spawner->SpawnSettings)
-			{
-				const int32 DistanceRate = Count / 4 + 1;
-
-				switch (Count % 4)
-				{
-				case 0:
-					SpawnLocation += FVector(DistanceRate * Spawner->DistanceBetweenItem, DistanceRate * Spawner->DistanceBetweenItem, 0.0f);
-					break;
-				case 1:
-					SpawnLocation += FVector(DistanceRate * Spawner->DistanceBetweenItem, -DistanceRate * Spawner->DistanceBetweenItem, 0.0f);
-					break;
-				case 2:
-					SpawnLocation += FVector(-DistanceRate * Spawner->DistanceBetweenItem, DistanceRate * Spawner->DistanceBetweenItem, 0.0f);
-					break;
-				case 3:
-					SpawnLocation += FVector(-DistanceRate * Spawner->DistanceBetweenItem, -DistanceRate * Spawner->DistanceBetweenItem, 0.0f);
-					break;
-				default:
-					break;
-				}
-
-				if (APRItem* NewItem = GetWorld()->SpawnActor<APRItem>(SpawnLocation, SpawnRotation))
-				{
-					const FString NameStr = FString::Printf(TEXT("%s_DataObject"), *NewItem->GetName());
-					NewItem->Init(FPRItemData(ItemSpawnSetting.ID, ItemSpawnSetting.Amount));
-				}
-				Count++;
-			}
+			const FString NameStr = FString::Printf(TEXT("%s_DataObject"), *PRItem->GetName());
+			PRItem->Init();
 		}
 	}
 }
-

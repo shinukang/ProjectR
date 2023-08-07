@@ -3,7 +3,11 @@
 
 #include "Item/PRBullet.h"
 
+#include "Engine/DataTable.h"
+#include "Item/PRFirearm.h"
 #include "Kismet/GameplayStatics.h"
+#include "Library/PRItemLibrary.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 // Sets default values
 APRBullet::APRBullet()
@@ -13,9 +17,10 @@ APRBullet::APRBullet()
 	PrimaryActorTick.bCanEverTick = false;
 
 	Collision = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
-	Collision->InitSphereRadius(1.5f);
+	Collision->SetSphereRadius(1.0f);
 	Collision->SetCollisionProfileName(FName("Projectile"));
 	Collision->SetGenerateOverlapEvents(false);
+	Collision->bReturnMaterialOnMove = true;
 	RootComponent = Collision;
 
 	if(GetLocalRole() == ROLE_Authority)
@@ -39,14 +44,13 @@ APRBullet::APRBullet()
 	ProjectileMovement->InitialSpeed = 10000.0f;
 	ProjectileMovement->MaxSpeed = 10000.0f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
-	ProjectileMovement->ProjectileGravityScale = 0.0f;
+	ProjectileMovement->ProjectileGravityScale = 1.0f;
 }
 
 // Called when the game starts or when spawned
 void APRBullet::BeginPlay()
 {
 	Super::BeginPlay();
-	Collision->IgnoreActorWhenMoving(GetInstigator(), true);
 }
 
 // Called every frame
@@ -57,15 +61,9 @@ void APRBullet::Tick(float DeltaTime)
 
 void APRBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if(OtherActor)
+	if(APRFirearm* PRFirearm = Cast<APRFirearm>(GetOwner()))
 	{
-		UGameplayStatics::ApplyPointDamage(OtherActor, Damage, Hit.ImpactNormal, Hit, GetInstigator()->Controller, this, DamageType);
+		PRFirearm->ApplyDamage(Hit);
 	}
 	Destroy();
 }
-
-void APRBullet::Init(float InDamage)
-{
-	Damage = InDamage;
-}
-

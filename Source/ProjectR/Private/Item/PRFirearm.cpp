@@ -14,6 +14,7 @@
 #include "Component/PRInventoryComponent.h"
 #include "Item/PRBullet.h"
 #include "Item/PRScope.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 APRFirearm::APRFirearm()
@@ -48,6 +49,20 @@ APRFirearm::APRFirearm()
 
 	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
 	SceneCapture->SetupAttachment(ScopeCam);
+
+	static ConstructorHelpers::FClassFinder<UCameraShakeBase> CamShake_Fire(TEXT("Blueprint'/Game/Character/CameraSystem/PRCameraShake_Fire.PRCameraShake_Fire_C'"));
+
+	if(CamShake_Fire.Succeeded())
+	{
+		CameraShake_Fire = CamShake_Fire.Class;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> DataTable(TEXT("DataTable'/Game/Data/DT_Ballistic.DT_Ballistic'"));
+
+	if (DataTable.Succeeded())
+	{
+		BallisticDataTable = DataTable.Object;
+	}
 }
 
 void APRFirearm::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -96,6 +111,7 @@ void APRFirearm::OnRep_FirearmData()
 	MagMesh->SetStaticMesh(FirearmData.MagMesh);
 	MagMesh->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FName(TEXT("Mag_Socket")));
 	BarrelMesh->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(TEXT("Barrel")));
+	BarrelMesh->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
 	GripMesh->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(TEXT("Grip")));
 	Client_SetScope(NAME_None);
 }
@@ -112,41 +128,63 @@ void APRFirearm::Fire()
 	{
 		if(LoadedBullets > 0)
 		{
-			FVector CamLoc; // Player Camera Location
-			FRotator CamRot; // Player Camera Rotation
+			FVector CamLoc = FVector::ZeroVector; // Player Camera Location
+			FRotator CamRot = FRotator::ZeroRotator; // Player Camera Rotation
 
-			if(bIsOnADS)
+			if(APRPlayerController* PlayerController = Cast<APRPlayerController>(GetOwner()))
 			{
-				CamLoc = ADSCam->GetComponentLocation();
-				CamRot = ADSCam->GetComponentRotation();
-			}
-			else
-			{
-				if (const APlayerCameraManager* ThirdCamera = Cast<APlayerController>(GetOwner())->PlayerCameraManager)
+				if (APlayerCameraManager* ThirdCamera = PlayerController->PlayerCameraManager)
 				{
 					ThirdCamera->GetCameraViewPoint(CamLoc, CamRot);
-				}
-			}
 
-			OnFire.Execute(FirearmData.FireRate / 2.0f, FirearmData.RecoilStrength, FirearmData.RecoilHandsAnimStrength);
+					if(GripMesh->GetStaticMesh())
+					{
+						ThirdCamera->StartCameraShake(CameraShake_Fire);
+					}
+					else
+					{
+						ThirdCamera->StartCameraShake(CameraShake_Fire, 1.5f);
+					}
+
+					if (!bIsOnADS)
+					{
+						OnFire.Execute(0.05f, 1.0f, 0.0f);
+					}
+				}
+				float RandYaw = UKismetMathLibrary::RandomFloatInRange(-0.05f, 0.05f);
+				float RandPitch = UKismetMathLibrary::RandomFloatInRange(-0.15f, 0.0f);
+				PlayerController->AddYawInput(RandYaw);
+				PlayerController->AddPitchInput(RandPitch);
+			}
 
 			TArray<AActor*> ActorsToIgnore = { this, GetOwner(), GetAttachParentActor() };
 
 			FHitResult HitResult;
+
 			FVector SpawnLocation = BodyMesh->GetSocketLocation(FName(TEXT("Barrel")));
 			FVector Destination = CamLoc + FirearmData.EffectiveRange * CamRot.Vector();
+			FRotator SpawnRotation = FRotationMatrix::MakeFromX(Destination - SpawnLocation).Rotator();
 			FCollisionQueryParams CollisionQueryParams;
 			CollisionQueryParams.AddIgnoredActors(ActorsToIgnore);
 
-			FRotator SpawnRotation = FRotationMatrix::MakeFromX(Destination - SpawnLocation).Rotator();
-			Server_Fire(SpawnLocation, SpawnRotation);
+			if(GetWorld()->LineTraceSingleByChannel(HitResult, CamLoc, CamLoc + CamRot.Vector() * FirearmData.EffectiveRange, ECollisionChannel::ECC_Visibility, CollisionQueryParams))
+			{
+				SpawnRotation = (HitResult.Location - SpawnLocation).Rotation();
+			}
 
-			GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &APRFirearm::Fire, FirearmData.FireRate, false);
+			Server_Fire(SpawnLocation, SpawnRotation, HitResult);
 
+			if(ItemData.Category == EPRCategory::Firearm_AssaultRifle || ItemData.Category == EPRCategory::Firearm_SubMachineGun)
+			{
+				GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &APRFirearm::Fire, FirearmData.FireRate, false);
+			}
 		}
 		else
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("No Ammo"));
+			if(FirearmData.SFX_Dry)
+			{
+				UGameplayStatics::SpawnSoundAttached(FirearmData.SFX_Dry, BodyMesh, FName(TEXT("Barrel")));
+			}
 		}
 	}
 }
@@ -156,25 +194,111 @@ void APRFirearm::StopFire()
 	bIsFiring = false;
 }
 
-void APRFirearm::Server_Fire_Implementation(FVector SpawnLocation, FRotator SpawnRotation)
+void APRFirearm::Server_Fire_Implementation(FVector SpawnLocation, FRotator SpawnRotation, FHitResult TargetHitResult)
 {
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Instigator = Cast<APlayerController>(GetOwner())->GetPawn();
-	SpawnParameters.Owner = GetOwner();
+	SpawnParameters.Owner = this;
 
-	if(APRBullet* Bullet = GetWorld()->SpawnActor<APRBullet>(SpawnLocation, SpawnRotation, SpawnParameters))
+	int32 Repeat = 1;
+
+	if(ItemData.Category == EPRCategory::Firearm_Shotgun)
 	{
-		Bullet->Init(FirearmData.Damage);
-		LoadedBullets--;
-		Multicast_SpawnEffects();
+		Repeat = 12;
+	}
+
+	for (int32 i = 0; i < Repeat; i++)
+	{
+		FRotator AdditiveRotation = FRotator(FMath::RandRange(-FirearmData.SpreadRate, FirearmData.SpreadRate), FMath::RandRange(-FirearmData.SpreadRate, FirearmData.SpreadRate), FMath::RandRange(-FirearmData.SpreadRate, FirearmData.SpreadRate));
+
+		SpawnRotation += AdditiveRotation;
+
+		if (TargetHitResult.Distance < 1000.0f)
+		{
+			FHitResult HitResult;
+			FCollisionQueryParams Params;
+			Params.bReturnPhysicalMaterial = true;
+
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, SpawnLocation, SpawnLocation + SpawnRotation.Vector() * FirearmData.EffectiveRange, ECC_Visibility, Params))
+			{
+				Multicast_ApplyDamage(HitResult);
+			}
+		}
+		else
+		{
+			GetWorld()->SpawnActor<APRBullet>(SpawnLocation, SpawnRotation, SpawnParameters);
+		}
+	}
+	LoadedBullets--;
+	Multicast_SpawnEffects();
+}
+
+void APRFirearm::ApplyDamage(FHitResult HitResult)
+{
+	UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), FirearmData.Damage, HitResult.ImpactNormal, HitResult, GetInstigator()->Controller, this, UDamageType::StaticClass());
+
+	if (const UPhysicalMaterial* HitPhysicalMat = HitResult.PhysMaterial.Get())
+	{
+		const FName ID = FName(StaticEnum<EPhysicalSurface>()->GetValueAsString(HitPhysicalMat->SurfaceType));
+
+		if (const FPRBallisticFX* BallisticFX = BallisticDataTable->FindRow<FPRBallisticFX>(ID, FString(TEXT(""))))
+		{
+			if (BallisticFX->VFX_Ballistic)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BallisticFX->VFX_Ballistic, HitResult.Location, HitResult.Normal.Rotation() - FRotator(90.0f, 0.0f, 0.0f));
+			}
+
+			if (BallisticFX->SFX_Ballistic)
+			{
+				UGameplayStatics::SpawnSoundAtLocation(GetWorld(), BallisticFX->SFX_Ballistic, HitResult.Location);
+			}
+		}
+		else
+		{
+			UE_LOG(LogClass, Warning, TEXT("APRBullet::OnHit : No Ballistic Data."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogClass, Warning, TEXT("APRBullet::OnHit : No Physical Material."));
 	}
 }
 
+void APRFirearm::Multicast_ApplyDamage_Implementation(FHitResult HitResult)
+{
+	ApplyDamage(HitResult);
+}
+
+
 void APRFirearm::Multicast_SpawnEffects_Implementation()
 {
-	if (FirearmData.MuzzleFire)
+	if (FirearmData.VFX_Fire)
 	{
-		UNiagaraFunctionLibrary::SpawnSystemAttached(FirearmData.MuzzleFire, BodyMesh, FName(TEXT("Barrel")), FVector(0.0f), FRotator(0.0f), EAttachLocation::Type::KeepRelativeOffset, true);
+		if(BarrelMesh->GetStaticMesh())
+		{
+			UGameplayStatics::SpawnEmitterAttached(FirearmData.VFX_Fire, BarrelMesh, FName(TEXT("Barrel")), FVector(0.0f), FRotator(0.0f), EAttachLocation::Type::SnapToTargetIncludingScale, true);
+		}
+		else
+		{
+			UGameplayStatics::SpawnEmitterAttached(FirearmData.VFX_Fire, BodyMesh, FName(TEXT("Barrel")), FVector(0.0f), FRotator(0.0f), EAttachLocation::Type::KeepRelativeOffset, true);
+		}
+	}
+
+	if(FirearmData.SFX_Fire && FirearmData.SFX_Fire_Suppressed)
+	{
+		if(FirearmData.bSuppressorAttached)
+		{
+			UGameplayStatics::SpawnSoundAttached(FirearmData.SFX_Fire_Suppressed, BodyMesh, FName(TEXT("Barrel")));
+		}
+		else
+		{
+			UGameplayStatics::SpawnSoundAttached(FirearmData.SFX_Fire, BodyMesh, FName(TEXT("Barrel")));
+		}
+	}
+
+	if(FirearmData.VFX_Ejection)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(FirearmData.VFX_Ejection, BodyMesh, FName(TEXT("Ejection")), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
 	}
 }
 
@@ -197,22 +321,23 @@ void APRFirearm::Reload()
 
 void APRFirearm::Server_Reload_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Server_Reload"));
-
-	if(FPRItemData* BulletData = CheckIsBulletsInInventory())
+	if (UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetAttachParentActor()->GetComponentByClass(UPRInventoryComponent::StaticClass())))
 	{
-		int32 MaxBullets = BulletData->Amount;
-		int32 BulletsForReload = FirearmData.BulletsPerMag - LoadedBullets;
+		if (FPRItemData* BulletData = InventoryComponent->GetInventoryItem(FirearmData.AmmunitionID))
+		{
+			const int32 TotalBullets = BulletData->Amount;
+			const int32 BulletsForReload = FirearmData.BulletsPerMag - LoadedBullets;
 
-		if (BulletsForReload >= MaxBullets)
-		{
-			LoadedBullets += MaxBullets;
-			BulletData->Amount = 0;
-		}
-		else
-		{
-			LoadedBullets += BulletsForReload;
-			BulletData->Amount -= BulletsForReload;
+			if (BulletsForReload >= TotalBullets)
+			{
+				LoadedBullets += TotalBullets;
+				InventoryComponent->TryRemoveFromInventory(FPRItemData(FirearmData.AmmunitionID, TotalBullets));
+			}
+			else
+			{
+				LoadedBullets += BulletsForReload;
+				InventoryComponent->TryRemoveFromInventory(FPRItemData(FirearmData.AmmunitionID, BulletsForReload));
+			}
 		}
 	}
 }
@@ -238,14 +363,15 @@ void APRFirearm::Client_SetScope_Implementation(FName ID)
 					NewTextureRenderTarget->InitAutoFormat(1024, 1024);
 					SceneCapture->TextureTarget = NewTextureRenderTarget;
 					SceneCapture->FOVAngle = ScopeData->FOV;
-					UMaterialInstanceDynamic* MID_Scope_Sight = ScopeMesh->CreateDynamicMaterialInstance(1);
-					MID_Scope_Sight->SetTextureParameterValue(FName(TEXT("RenderTarget")), NewTextureRenderTarget);
+					ScopeMaterial = ScopeMesh->CreateDynamicMaterialInstance(1);
+					ScopeMaterial->SetTextureParameterValue(FName(TEXT("RenderTarget")), NewTextureRenderTarget);
 					return;
 				}
 			}
 			else
 			{
 				ScopeMesh->SetMaterial(1, nullptr);
+				ScopeMaterial = nullptr;
 				return;
 			}
 		}
@@ -266,6 +392,33 @@ void APRFirearm::Client_SetScope_Implementation(FName ID)
 	}
 	
 }
+
+void APRFirearm::Zoom(bool bIn)
+{
+	if(ScopeMaterial)
+	{
+		if (const FPRScopeData* ScopeData = UPRItemLibrary::GetAdvancedData<FPRScopeData>(Attachments[EPRCategory::Attachment_Scope]))
+		{
+			const float MaxFOV = 20.0f;
+			const float MinFOV = ScopeData->FOV;
+			const float DeltaFOV = (MaxFOV - MinFOV) / 10.0f;
+
+			float NewFOV = 0.0f;
+
+			if (bIn)
+			{
+				NewFOV = SceneCapture->FOVAngle - DeltaFOV;
+			}
+			else
+			{
+				NewFOV = SceneCapture->FOVAngle + DeltaFOV;
+			}
+
+			SceneCapture->FOVAngle = FMath::Clamp(NewFOV, MinFOV, MaxFOV);
+		}
+	}
+}
+
 
 void APRFirearm::Server_AddAttachment_Implementation(EPRCategory Category, FName ID, APRItem* NewAttachmentItem)
 {
@@ -328,8 +481,15 @@ void APRFirearm::Multicast_UpdateAttachment_Implementation(int32 Index, EPRCateg
 	switch (Category)
 	{
 	case EPRCategory::Attachment_Barrel:
-
 		BarrelMesh->SetStaticMesh(AttachmentMesh);
+
+		FirearmData.bSuppressorAttached = false;
+
+		if (const FPRAttachmentData* AttachmentData = UPRItemLibrary::GetAdvancedData<FPRAttachmentData>(ID, Category))
+		{
+			FirearmData.bSuppressorAttached = AttachmentData->Tags.Contains(FString(TEXT("Suppressor")));
+		}
+
 		break;
 
 	case EPRCategory::Attachment_Grip:
@@ -343,57 +503,4 @@ void APRFirearm::Multicast_UpdateAttachment_Implementation(int32 Index, EPRCateg
 	default:
 		break;
 	}
-
-	/*
-	if (NewAttachmentItemData.MainCategory == EPRMainCategory::Attachment)
-	{
-		if (Attachments.Find(NewAttachmentItemData.SubCategory))
-		{
-			if (NewAttachmentItemData == Attachments[NewAttachmentItemData.SubCategory])
-			{
-				Attachments.Add(NewAttachmentItemData.SubCategory, FPRItemData());
-				OnUpdateAttachment.Broadcast(NewAttachmentItemData.Index, NewAttachmentItemData.SubCategory, nullptr);
-
-				switch (NewAttachmentItemData.SubCategory)
-				{
-				case EPRCategory::Attachment_Barrel:
-					BarrelMesh->SetStaticMesh(nullptr);
-					break;
-
-				case EPRCategory::Attachment_Grip:
-					GripMesh->SetStaticMesh(nullptr);
-					break;
-
-				case EPRCategory::Attachment_Scope:
-					Client_SetScope(nullptr);
-					break;
-
-				default:
-					break;
-				}
-				return;
-			}
-		}
-		Attachments.Add(NewAttachmentItemData.SubCategory, NewAttachmentItemData);
-		OnUpdateAttachment.Broadcast(NewAttachmentItemData.Index, NewAttachmentItemData.SubCategory, NewAttachmentItemData);
-
-		switch (NewAttachmentItemData.SubCategory)
-		{
-		case EPRCategory::Attachment_Barrel:
-			BarrelMesh->SetStaticMesh(NewAttachmentItemData.GetBaseData().Mesh);
-			break;
-
-		case EPRCategory::Attachment_Grip:
-			GripMesh->SetStaticMesh(NewAttachmentItemData.GetBaseData().Mesh);
-			break;
-
-		case EPRCategory::Attachment_Scope:
-			Client_SetScope(NewAttachmentItemData);
-			break;
-
-		default:
-			break;
-		}
-	}
-	*/
 }

@@ -36,8 +36,6 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
-
 	UFUNCTION(Server, Reliable)
 	void Server_SwapFirearm(int32 PrevIndex, int32 NewIndex);
 
@@ -67,12 +65,19 @@ public:
 
 	void SetMaxCapacity(float NewMaxCapacity);
 
+	UFUNCTION()
+	void AddGroundItem(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void RemoveGroundItem(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
 	// Currently detected actor reference
+	UPROPERTY()
 	TObjectPtr<APRItem> DetectedItem = nullptr;
 
 	bool bIsInventoryOpen = false;
@@ -96,7 +101,7 @@ public:
 	TMap<EPRCategory, FName> Equipments;
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_GroundedItems)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<APRItem*> GroundedItems;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_InventoryItems)
@@ -113,17 +118,9 @@ protected:
 
 private:
 
-	// Check the interactive actor
-	UFUNCTION(Client, Reliable)
-	void Client_FindAimedItem();
+	void UpdateAimedItemInfo();
 
 	APRItem* FindAimedItem();
-
-	void FindGroundItems();
-
-	// Find Grounded Items
-	UFUNCTION(Server, Reliable)
-	void Server_FindGroundItems();
 	
 	int32 GetValidFirearmSlotIndex(EPRCategory Category);
 
@@ -134,10 +131,10 @@ private:
 	void OnRep_InventoryItems();
 
 	UFUNCTION()
-	void OnRep_GroundedItems();
-
-	UFUNCTION()
 	void OnRep_CurrentCapacity();
+
+	UFUNCTION(Server, Reliable)
+	void Server_UpdateCapacity();
 
 	// Character camera reference
 	TObjectPtr<APlayerCameraManager> Camera = nullptr;

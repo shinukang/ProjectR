@@ -22,21 +22,9 @@ UPRInventoryComponent::UPRInventoryComponent()
 void UPRInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UPRInventoryComponent, GroundedItems);
 	DOREPLIFETIME_CONDITION(UPRInventoryComponent, InventoryItems, COND_None);
 	DOREPLIFETIME(UPRInventoryComponent, Firearms);
 	DOREPLIFETIME(UPRInventoryComponent, CurrentCapacity);
-}
-
-bool UPRInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
-{
-	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
-
-	//bWroteSomething |= Channel->ReplicateSubobjectList(InventoryItems, *Bunch, *RepFlags);
-
-	//bWroteSomething |= Channel->ReplicateSubobjectList(GroundedItems, *Bunch, *RepFlags);
-
-	return bWroteSomething;
 }
 
 // Called when the game starts
@@ -57,8 +45,7 @@ void UPRInventoryComponent::OnControllerInitialized(APlayerController* PlayerCon
 void UPRInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	Client_FindAimedItem();
-	FindGroundItems();
+	UpdateAimedItemInfo();
 }
 
 void UPRInventoryComponent::Server_AddItemToInventory_Implementation(APRItem* Item, int32 Index)
@@ -70,43 +57,25 @@ void UPRInventoryComponent::Server_AddItemToInventory_Implementation(APRItem* It
 
 		if (TryAddItemToInventory(ItemData))
 		{
-			CurrentCapacity += ItemData.Amount * UPRItemLibrary::GetBaseData(ItemData.ID).WeightPerPiece;
 			Item->Destroy();
-			UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::Server_AddItemToInventory : Success to TryAddItemToInventory. CurrentCapacity = %f"), CurrentCapacity);
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::Server_AddItemToInventory : Failure to TryAddItemToInventory."));
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::Server_AddItemToInventory : Item or ItemDataObject is invalid."));
 	}
 }
 
 void UPRInventoryComponent::Server_AddItemToInventoryWithoutDestroy_Implementation(FPRItemData ItemData)
 {
-	if(TryAddItemToInventory(ItemData))
-	{
-		CurrentCapacity += ItemData.Amount * UPRItemLibrary::GetBaseData(ItemData.ID).WeightPerPiece;
-	}
+	TryAddItemToInventory(ItemData);
 }
-
-
-/*
-void UPRInventoryComponent::Server_AddItemToInventoryWithoutDestroy_Implementation(UPRItemDataObject* ItemDataObject)
-{
-	if (ItemDataObject)
-	{
-		TryAddItemToInventory(ItemDataObject);
-	}
-}
-*/
-
 
 bool UPRInventoryComponent::TryAddItemToInventory(FPRItemData ItemDataToAdd)
 {
+	const float NewItemWeight = ItemDataToAdd.Amount * UPRItemLibrary::GetBaseData(ItemDataToAdd.ID).WeightPerPiece;
+
+	if(CurrentCapacity + NewItemWeight > MaxCapacity)
+	{
+		return false;
+	}
+
 	int32 SelectedIndex = ItemDataToAdd.Index;
 
 	switch(ItemDataToAdd.Category)
@@ -180,17 +149,16 @@ void UPRInventoryComponent::Server_RemoveFromInventory_Implementation(FPRItemDat
 
 		if (bNeedToSpawn)
 		{
+			FActorSpawnParameters SpawnParameters;
+			SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
 			FVector SpawnLocation = GetSpawnLocation();
 			FRotator SpawnRotation = FRotator::ZeroRotator;
 
-			if (APRItem* Item = GetWorld()->SpawnActor<APRItem>(SpawnLocation, SpawnRotation))
+			if (APRItem* Item = GetWorld()->SpawnActor<APRItem>(SpawnLocation, SpawnRotation, SpawnParameters))
 			{
 				Item->Init(ItemDataToRemove);
 			}
-		}
-		else
-		{
-
 		}
 	}
 }
@@ -209,6 +177,20 @@ bool UPRInventoryComponent::TryRemoveFromInventory(FPRItemData ItemDataToRemove)
 	case EPRCategory::Firearm_Pistol:
 		if(APRFirearm* FirearmToRemove = Firearms[ItemDataToRemove.Index])
 		{
+			TArray<EPRCategory> Attachments;
+
+			FirearmToRemove->Attachments.GetKeys(Attachments);
+
+			for (EPRCategory Category : Attachments)
+			{
+				FirearmToRemove->Server_RemoveAttachment(Category, false);
+			}
+
+			if (FirearmToRemove->LoadedBullets > 0)
+			{
+				Server_AddItemToInventoryWithoutDestroy(FPRItemData(FirearmToRemove->FirearmData.AmmunitionID, FirearmToRemove->LoadedBullets));
+			}
+
 			Firearms[ItemDataToRemove.Index] = nullptr;
 			FirearmToRemove->Destroy();
 
@@ -241,11 +223,12 @@ bool UPRInventoryComponent::TryRemoveFromInventory(FPRItemData ItemDataToRemove)
 	case EPRCategory::Ammunition:
 	case EPRCategory::Medicine_HealthPoint:
 	case EPRCategory::Medicine_Stamina:
-		int32 Index = InventoryItems.Find(ItemDataToRemove);
-
+		const int32 Index = InventoryItems.Find(ItemDataToRemove);
 		if (Index != INDEX_NONE)
 		{
-			if (InventoryItems[Index].Amount -= ItemDataToRemove.Amount <= 0)
+			InventoryItems[Index].Amount -= ItemDataToRemove.Amount;
+
+			if (InventoryItems[Index].Amount <= 0)
 			{
 				InventoryItems.RemoveAt(Index);
 			}
@@ -263,15 +246,16 @@ void UPRInventoryComponent::OnInteractAction()
 	Server_AddItemToInventory(DetectedItem);
 }
 
-void UPRInventoryComponent::Client_FindAimedItem_Implementation()
+void UPRInventoryComponent::UpdateAimedItemInfo()
 {
-	if (APRItem* NewDetectedItem = FindAimedItem())
+	APRItem* NewDetectedItem = FindAimedItem();
+
+	if (IsValid(NewDetectedItem) && Cast<APRCharacter>(GetOwner())->GetRotationMode() != EPRRotationMode::Aiming)
 	{
 		if (DetectedItem != NewDetectedItem)
 		{
 			// UI update
 			DetectedItem = NewDetectedItem;
-
 			OnUpdateInteractInfo.Broadcast(UPRItemLibrary::GetBaseData(DetectedItem->ItemData.ID).Name);
 		}
 	}
@@ -307,31 +291,23 @@ APRItem* UPRInventoryComponent::FindAimedItem()
 	}
 	return nullptr;
 }
-void UPRInventoryComponent::FindGroundItems()
+
+void UPRInventoryComponent::AddGroundItem(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(bIsInventoryOpen)
+	if(APRItem* Item = Cast<APRItem>(OtherActor))
 	{
-		Server_FindGroundItems();
+		GroundedItems.Add(Item);
 	}
+	OnUpdateGroundItems.Broadcast(GroundedItems);
 }
 
-void UPRInventoryComponent::Server_FindGroundItems_Implementation()
+void UPRInventoryComponent::RemoveGroundItem(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	GroundedItems.Empty();
-
-	TArray<AActor*> ActorsToIgnore;
-	TArray<FHitResult> HitResults;
-	FVector SweepCenter = GetOwner()->GetActorLocation();
-
-	GetWorld()->SweepMultiByChannel(HitResults, SweepCenter, SweepCenter, FQuat(0.0f), ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(500.0f));
-
-	for (FHitResult HitResult : HitResults)
+	if (APRItem* Item = Cast<APRItem>(OtherActor))
 	{
-		if (APRItem* DetectedGroundItem = Cast<APRItem>(HitResult.GetActor()))
-		{
-			GroundedItems.Add(DetectedGroundItem);
-		}
+		GroundedItems.Remove(Item);
 	}
+	OnUpdateGroundItems.Broadcast(GroundedItems);
 }
 
 int32 UPRInventoryComponent::GetValidFirearmSlotIndex(EPRCategory Category)
@@ -371,18 +347,25 @@ void UPRInventoryComponent::OnRep_InventoryItems()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_InventoryItems"));
 	OnUpdateInventoryItems.Broadcast(InventoryItems);
-}
-
-void UPRInventoryComponent::OnRep_GroundedItems()
-{
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_GrounedItmes"));
-	OnUpdateGroundItems.Broadcast(GroundedItems);
+	Server_UpdateCapacity();
 }
 
 void UPRInventoryComponent::OnRep_CurrentCapacity()
 {
 	UE_LOG(LogTemp, Warning, TEXT("UPRInventoryComponent::OnRep_CurrentCapacity"));
 	OnUpdateCapacity.Broadcast(CurrentCapacity/MaxCapacity);
+}
+
+void UPRInventoryComponent::Server_UpdateCapacity_Implementation()
+{
+	float NewCapacity = 0.0f;
+
+	for (const FPRItemData ItemData : InventoryItems)
+	{
+		NewCapacity += ItemData.Amount * UPRItemLibrary::GetBaseData(ItemData.ID).WeightPerPiece;
+	}
+
+	CurrentCapacity = NewCapacity;
 }
 
 void UPRInventoryComponent::Client_UpdateEquipment_Implementation(EPRCategory SubCategory, UPRItemDataObject* ItemDataObject)

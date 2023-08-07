@@ -19,7 +19,10 @@ enum class EPRFirearmState : uint8
 	Equip_End,
 
 	Reload_Start,
-	Reload_End,
+	Reload_In,
+	Reload_Out,
+	Reload_Cock,
+	Reload_End
 };
 
 UCLASS()

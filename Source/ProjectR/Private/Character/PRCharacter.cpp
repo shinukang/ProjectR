@@ -9,7 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "System/PRGameInstance.h"
 #include "System/PRLiveCharacterSpawnPoint.h"
-#include "System/PRLobbyPawn.h"
+#include "System/PRLiveCharacter.h"
 #include "System/PRPlayerState.h"
 
 APRCharacter::APRCharacter(const FObjectInitializer& ObjectInitializer)
@@ -27,12 +27,9 @@ APRCharacter::APRCharacter(const FObjectInitializer& ObjectInitializer)
 	BodyParts = CreateDefaultSubobject<USceneComponent>(TEXT("BodyParts"));
 	BodyParts->SetupAttachment(GetMesh());
 
-	Head = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Head"));
-	Head->SetupAttachment(BodyParts);
-	Head->SetLeaderPoseComponent(GetMesh());
-
 	Top = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Top"));
 	Top->SetupAttachment(BodyParts);
+	Top->SetLeaderPoseComponent(GetMesh());	
 
 	Arm = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Arm"));
 	Arm->SetupAttachment(BodyParts);
@@ -40,9 +37,11 @@ APRCharacter::APRCharacter(const FObjectInitializer& ObjectInitializer)
 
 	Bottom = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Bottom"));
 	Bottom->SetupAttachment(BodyParts);
+	Bottom->SetLeaderPoseComponent(GetMesh());
 
 	Shoes = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Shoes"));
 	Shoes->SetupAttachment(BodyParts);
+	Shoes->SetLeaderPoseComponent(GetMesh());
 
 	Equipments = CreateDefaultSubobject<USceneComponent>(TEXT("Equipments"));
 	Equipments->SetupAttachment(GetMesh());
@@ -58,6 +57,10 @@ APRCharacter::APRCharacter(const FObjectInitializer& ObjectInitializer)
 	Backpack = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Backpack"));
 	Backpack->SetupAttachment(Equipments);
 	Backpack->SetLeaderPoseComponent(GetMesh());
+
+	SphereCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
+	SphereCollision->SetupAttachment(RootComponent);
+	SphereCollision->SetSphereRadius(500.0f);
 }
 
 void APRCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -91,6 +94,7 @@ void APRCharacter::Multicast_UpdateCostume_Implementation(const TArray<FPRCostum
 			break;
 		}
 	}
+	//MergeCharacterMesh();
 	Client_UpdateLiveCharacter(Costumes);
 }
 
@@ -98,7 +102,7 @@ void APRCharacter::Client_UpdateLiveCharacter_Implementation(const TArray<FPRCos
 {
 	if(GetOwner())
 	{
-		if (APRLobbyPawn* LiveCharacter = Cast<APRPlayerController>(GetOwner())->LiveCharacter)
+		if (APRLiveCharacter* LiveCharacter = Cast<APRPlayerController>(GetOwner())->LiveCharacter)
 		{
 			LiveCharacter->Client_UpdateCostume(Costumes);
 		}
@@ -183,6 +187,7 @@ void APRCharacter::Server_UpdateFirearm_Implementation(int32 Index, FPRItemData 
 		FirearmItemData.Index = Index;
 		Firearm->Init(FirearmItemData);
 		Firearm->SetOwner(GetOwner());
+		Firearm->SetInstigator(this);
 		AttachToBack(Firearm);
 		PRInventoryComponent->Firearms[Index] = Firearm;
 	}
@@ -283,6 +288,9 @@ void APRCharacter::BeginPlay()
 	if(UPRInventoryComponent* InventoryComponent = Cast<UPRInventoryComponent>(GetComponentByClass(UPRInventoryComponent::StaticClass())))
 	{
 		PRInventoryComponent = InventoryComponent;
+
+		SphereCollision->OnComponentBeginOverlap.AddDynamic(PRInventoryComponent.Get(), &UPRInventoryComponent::AddGroundItem);
+		SphereCollision->OnComponentEndOverlap.AddDynamic(PRInventoryComponent.Get(), &UPRInventoryComponent::RemoveGroundItem);
 	}
 
 	if(UPRStatusComponent* StatusComponent = Cast<UPRStatusComponent>(GetComponentByClass(UPRStatusComponent::StaticClass())))
@@ -342,12 +350,22 @@ void APRCharacter::Server_HoldFirearm_Implementation(int32 Index)
 	}
 }
 
-void APRCharacter::AttachToHand()
+void APRCharacter::AttachToHand(bool bRight)
 {
 	if (CurrentHeldFirearm)
 	{
-		UE_LOG(LogClass, Warning, TEXT("APRCharacter::AttachToHand : %s"), *CurrentHeldFirearm->GetName())
-		CurrentHeldFirearm->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(TEXT("VB LHS_ik_hand_gun")));
+		FName AttachBoneName;
+
+		if(bRight)
+		{
+			AttachBoneName = FName(TEXT("VB RHS_ik_hand_gun"));
+		}
+		else
+		{
+			AttachBoneName = FName(TEXT("VB LHS_ik_hand_gun"));
+		}
+
+		CurrentHeldFirearm->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachBoneName);
 	}
 }
 
@@ -357,7 +375,16 @@ void APRCharacter::AttachToBack(APRFirearm* NewFirearm)
 	{
 		const FString SocketName = FString::Printf(TEXT("Firearm_Socket_0%d"), NewFirearm->ItemData.Index + 1);
 
-		USkeletalMeshComponent* ParentMesh = Backpack->GetSkeletalMeshAsset() ? Backpack : GetMesh();
+		USkeletalMeshComponent* ParentMesh;
+
+		if(Backpack->GetSkeletalMeshAsset())
+		{
+			ParentMesh = Backpack;
+		}
+		else
+		{
+			ParentMesh = GetMesh();
+		}
 
 		NewFirearm->AttachToComponent(ParentMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(*SocketName));
 	}
@@ -375,8 +402,8 @@ void APRCharacter::OnRep_CurrentHeldFirearm()
 
 		if(UPRCharacterAnimInstance* PRAnimInstance = Cast<UPRCharacterAnimInstance>(GetMesh()->GetAnimInstance()))
 		{
-			PRAnimInstance->RecoilStrength = FirearmData.RecoilStrength;
-			PRAnimInstance->RecoilHandsAnimStrength = FirearmData.RecoilHandsAnimStrength;
+			PRAnimInstance->RecoilStrength = 1.0f;
+			PRAnimInstance->RecoilHandsAnimStrength = 0.0f;
 			PRAnimInstance->BasePoseSequence = FirearmData.PoseSequence;
 		}
 	}
@@ -419,7 +446,6 @@ void APRCharacter::OnReload_Implementation(const FInputActionValue& Value)
 			{
 				OnADS(Value);
 			}
-
 			Replicated_PlayMontage(CurrentHeldFirearm->FirearmData.ReloadMontage, 1.2f);
 		}
 	}
@@ -427,22 +453,30 @@ void APRCharacter::OnReload_Implementation(const FInputActionValue& Value)
 
 void APRCharacter::OnAim_Implementation(const FInputActionValue& Value)
 {
-	if(!bIsOnADS)
+	if(CurrentHeldFirearm)
 	{
-		if (Value.Get<bool>())
+		if(CurrentHeldFirearm->bIsFiring)
 		{
-			// AimAction: Hold "AimAction" to enter the aiming mode, release to revert back the desired rotation mode.
-			SetRotationMode(EPRRotationMode::Aiming);
+			CurrentHeldFirearm->StopFire();
 		}
-		else
+
+		if (!bIsOnADS)
 		{
-			if (ViewMode == EPRViewMode::ThirdPerson)
+			if (Value.Get<bool>())
 			{
-				SetRotationMode(DesiredRotationMode);
+				// AimAction: Hold "AimAction" to enter the aiming mode, release to revert back the desired rotation mode.
+				SetRotationMode(EPRRotationMode::Aiming);
 			}
-			else if (ViewMode == EPRViewMode::FirstPerson)
+			else
 			{
-				SetRotationMode(EPRRotationMode::LookingDirection);
+				if (ViewMode == EPRViewMode::ThirdPerson)
+				{
+					SetRotationMode(DesiredRotationMode);
+				}
+				else if (ViewMode == EPRViewMode::FirstPerson)
+				{
+					SetRotationMode(EPRRotationMode::LookingDirection);
+				}
 			}
 		}
 	}
@@ -452,7 +486,7 @@ void APRCharacter::OnADS_Implementation(const FInputActionValue& Value)
 {
 	if(CurrentHeldFirearm)
 	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(GetOwner()))
+		if (APRPlayerController* PlayerController = Cast<APRPlayerController>(GetOwner()))
 		{
 			if (bIsOnADS)
 			{
@@ -468,13 +502,23 @@ void APRCharacter::OnADS_Implementation(const FInputActionValue& Value)
 				SetRotationMode(EPRRotationMode::Aiming);
 				LookLeftRightRate = LookUpDownRate = 0.3f;
 			}
-			Head->SetVisibility(!bIsOnADS);
+			GetMesh()->SetVisibility(!bIsOnADS);
 			HeadGear->SetVisibility(!bIsOnADS);
 			Arm->SetVisibility(!bIsOnADS);
 			CurrentHeldFirearm->bIsOnADS = bIsOnADS;
+			PlayerController->HUD->UpdateCrosshairVisibility(!bIsOnADS);
 		}
 	}
 }
+
+void APRCharacter::OnZoom_Implementation(const FInputActionValue& Value)
+{
+	if(CurrentHeldFirearm)
+	{
+		CurrentHeldFirearm->Zoom(Value.Get<float>() > 0);
+	}
+}
+
 
 void APRCharacter::OnRep_PlayerState()
 {

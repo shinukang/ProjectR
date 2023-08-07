@@ -13,6 +13,15 @@
 /**
  * 
  */
+
+UENUM(BlueprintType)
+enum class EPRWidgetMode : uint8
+{
+	Default,
+	Inventory,
+	Exit
+};
+
 UCLASS()
 class PROJECTR_API UPRWidgetBase : public UUserWidget
 {
@@ -23,7 +32,10 @@ public:
 	void UpdateInteractInfo(const FText& DisplayName);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void SetInventoryVisibility(bool bShow);
+	void SetWidgetMode(EPRWidgetMode NewWidgetMode);
+
+	UFUNCTION(BlueprintCallable)
+	EPRWidgetMode GetWidgetMode() { return WidgetMode; }
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateGroundItems(const TArray<APRItem*>& GroundItems);
@@ -56,5 +68,18 @@ public:
 	void SetLiveCharacterMaterial(UMaterialInterface* NewLiveCharacterMaterial);
 
 	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateCrosshairVisibility(bool bIsVisible);
+
+	UFUNCTION(BlueprintImplementableEvent)
 	UMaterialInterface* GetLiveCharacterMaterial();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateStaminaBuffTimer(bool bStart);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateHealthPointRecoveryTimer(bool bStart);
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EPRWidgetMode WidgetMode = EPRWidgetMode::Default;
 };

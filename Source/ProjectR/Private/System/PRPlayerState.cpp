@@ -6,7 +6,8 @@
 #include "Character/PRCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Library/PRCharacterStructLibrary.h"
-#include "System/PRLobbyPawn.h"
+#include "System/PRLiveCharacter.h"
+#include "System/PRLiveCharacter.h"
 #include "System/PRSaveGame.h"
 
 APRPlayerState::APRPlayerState()
@@ -74,7 +75,7 @@ void APRPlayerState::UpdateCostume(FPRCostume Costume)
 
 void APRPlayerState::ApplyCostume()
 {
-	if(APRLobbyPawn* LobbyPawn = Cast<APRLobbyPawn>(GetPawn()))
+	if(APRLiveCharacter* LobbyPawn = Cast<APRLiveCharacter>(GetPawn()))
 	{
 		UE_LOG(LogClass, Warning, TEXT("APRPlayerState::ApplyCosutme : LobbyPawn."));
 		LobbyPawn->Client_UpdateCostume(Costumes);

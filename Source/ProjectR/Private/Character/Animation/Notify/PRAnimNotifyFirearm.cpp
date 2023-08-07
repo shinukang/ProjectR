@@ -12,39 +12,69 @@ void UPRAnimNotifyFirearm::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenc
 	{
 		if(APRCharacter* PRCharacter = Cast<APRCharacter>(MeshComp->GetOwner()))
 		{
-			switch(FirearmState)
+			if (APRFirearm* PRFirearm = PRCharacter->GetCurrentHeldFirearm())
 			{
-			case EPRFirearmState::Equip_Start:
-				PRCharacter->SetIsEquipping(true);
-				break;
-
-			case EPRFirearmState::Equip_Attach:
-				PRCharacter->AttachToHand();
-				PRCharacter->SetNeedToResetOverlayState(false);
-				break;
-			case EPRFirearmState::Equip_Detach:
-				for (APRFirearm* Firearm : PRCharacter->PRInventoryComponent->Firearms)
+				switch (FirearmState)
 				{
-					if (Firearm != PRCharacter->GetCurrentHeldFirearm())
+				case EPRFirearmState::Equip_Start:
+					if (USoundCue* HolsterSound = PRFirearm->FirearmData.SFX_Holster)
 					{
-						PRCharacter->AttachToBack(Firearm);
+						UGameplayStatics::SpawnSoundAttached(HolsterSound, PRFirearm->BodyMesh);
 					}
+					PRCharacter->SetIsEquipping(true);
+					break;
+
+				case EPRFirearmState::Equip_Attach:
+					PRCharacter->AttachToHand();
+					break;
+				case EPRFirearmState::Equip_Detach:
+					for (APRFirearm* BackFirearm : PRCharacter->PRInventoryComponent->Firearms)
+					{
+						if (BackFirearm != PRFirearm)
+						{
+							PRCharacter->AttachToBack(BackFirearm);
+						}
+					}
+					break;
+
+				case EPRFirearmState::Equip_End:
+					PRCharacter->SetIsEquipping(false);
+					PRCharacter->SetNeedToResetOverlayState(false);
+					break;
+
+				case EPRFirearmState::Reload_Start:
+					PRCharacter->AttachToHand(false);
+					PRCharacter->SetIsReloading(true);
+					break;
+
+				case EPRFirearmState::Reload_Out:
+					if(USoundCue* MagOutSound = PRFirearm->FirearmData.SFX_Reload_MagOut)
+					{
+						UGameplayStatics::SpawnSoundAttached(MagOutSound, PRFirearm->BodyMesh);
+					}
+					break;
+
+				case EPRFirearmState::Reload_In:
+					if (USoundCue* MagInSound = PRFirearm->FirearmData.SFX_Reload_MagIn)
+					{
+						UGameplayStatics::SpawnSoundAttached(MagInSound, PRFirearm->BodyMesh);
+					}
+					break;
+
+				case EPRFirearmState::Reload_Cock:
+					PRCharacter->GetCurrentHeldFirearm()->Reload();
+					if (USoundCue* CockSound = PRFirearm->FirearmData.SFX_Reload_Cock)
+					{
+						UGameplayStatics::SpawnSoundAttached(CockSound, PRFirearm->BodyMesh);
+					}
+					break;
+
+				case EPRFirearmState::Reload_End:
+					PRCharacter->AttachToHand(true);
+					PRCharacter->SetIsReloading(false);
+					break;
 				}
-				break;
-			case EPRFirearmState::Equip_End:
-				PRCharacter->SetIsEquipping(false);
-				break;
-
-			case EPRFirearmState::Reload_Start:
-				PRCharacter->SetIsReloading(true);
-				break;
-
-			case EPRFirearmState::Reload_End:
-				PRCharacter->GetCurrentHeldFirearm()->Reload();
-				PRCharacter->SetIsReloading(false);
-				break;
 			}
-			
 		}
 	}
 }
